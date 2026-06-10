@@ -531,6 +531,7 @@ hr.divider {
 .tag-cyber    { color: #fa4a6e; border-color: rgba(250,74,110,.3);  background: rgba(250,74,110,.07); }
 .tag-hardware { color: #ff8c42; border-color: rgba(255,140,66,.3);  background: rgba(255,140,66,.07); }
 .tag-rf       { color: #ff8c42; border-color: rgba(255,140,66,.3);  background: rgba(255,140,66,.07); }
+.tag-cloud    { color: #4ae8fa; border-color: rgba(74,232,250,.3);  background: rgba(74,232,250,.07); }
 
 .project-link {
   font-size: .8rem; color: var(--accent);
@@ -934,4 +935,15 @@ hr.divider {
   .boot-logo        { font-size: .45rem; }
   .kv-row           { grid-template-columns: 110px 1fr; }
   .help-table       { grid-template-columns: 155px 1fr; }
+}
+
+@media (max-width: 480px) {
+  .terminal-window  { max-width: 100%; overflow-x: hidden; }
+  .terminal-output  { overflow-x: hidden; }
+  .out-block, .echo-line, .para, .error-line, .success-line, .info-line, .warn-line {
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+  .cmd-input        { font-size: 12px; }
+  .prompt-label     { font-size: 12px; }
 }

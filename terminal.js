@@ -42,6 +42,7 @@ const PROFILE = {
   github:    'https://github.com/ericalfonce',
   linkedin:  'https://www.linkedin.com/in/eric-alfonce',
   instagram: 'https://www.instagram.com/ericalfonce',
+  email:     'ericgasperalfonce@gmail.com',
 };
 
 const PROJECTS = [
@@ -112,7 +113,7 @@ const PROJECTS = [
     name: 'Cloud Architecture Diagrams',
     repo: 'diagrams',
     desc: 'Diagram-as-code project for prototyping and documenting cloud system architectures using code-based diagramming tools.',
-    tags: ['iot'],
+    tags: ['cloud'],
     url:  'https://github.com/ericalfonce/diagrams',
   },
   {
@@ -181,6 +182,7 @@ const ROUTE_TITLES = {
   '/uses':       'eric@portfolio: uses',
   '/certs':      'eric@portfolio: certifications',
   '/ctf':        'eric@portfolio: ctf',
+  '/cv':         'eric@portfolio: cv',
   '/themes':     'eric@portfolio: themes',
   '/help':       'eric@portfolio: help',
 };
@@ -202,6 +204,7 @@ const COMMANDS = {
   '/uses':        { fn: cmdUses,       desc: 'Tools & tech stack I use'        },
   '/social':      { fn: cmdSocial,     desc: 'Social media links'              },
   '/contact':     { fn: cmdContact,    desc: 'Get in touch'                    },
+  '/cv':          { fn: cmdCv,         desc: 'Download my CV'                  },
   /* Shortcuts */
   '/github':      { fn: () => openLink(PROFILE.github),    desc: 'Open GitHub'    },
   '/linkedin':    { fn: () => openLink(PROFILE.linkedin),  desc: 'Open LinkedIn'  },
@@ -1177,6 +1180,11 @@ function cmdSocial() {
           <span class="social-label">Instagram</span>
           <span class="social-handle"><a href="${PROFILE.instagram}" target="_blank" rel="noopener">@ericalfonce</a></span>
         </div>
+        <div class="social-item">
+          <div class="social-icon" style="color:var(--cyan)"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg></div>
+          <span class="social-label">Email</span>
+          <span class="social-handle"><a href="mailto:${PROFILE.email}">${PROFILE.email}</a></span>
+        </div>
       </div>
     </div>
   `);
@@ -1192,6 +1200,7 @@ function cmdContact() {
       <p><span class="lbl">GitHub    → </span><a href="${PROFILE.github}"    target="_blank" rel="noopener">github.com/ericalfonce</a></p>
       <p><span class="lbl">LinkedIn  → </span><a href="${PROFILE.linkedin}"  target="_blank" rel="noopener">linkedin.com/in/eric-alfonce</a></p>
       <p><span class="lbl">Instagram → </span><a href="${PROFILE.instagram}" target="_blank" rel="noopener">instagram.com/ericalfonce</a></p>
+      <p><span class="lbl">Email     → </span><a href="mailto:${PROFILE.email}">${PROFILE.email}</a></p>
       <br/>
       <p style="color:var(--muted);font-size:.84rem">
         Quick commands: <span style="color:var(--accent)">/github</span> ·
@@ -1200,6 +1209,28 @@ function cmdContact() {
       </p>
     </div>
   `);
+}
+
+/* ── CV Download ── */
+function cmdCv() {
+  const url = '/eric-alfonce-cv.pdf';
+  fetch(url, { method: 'HEAD' })
+    .then(res => {
+      if (res.ok) {
+        appendBlock(`<p class="success-line">Downloading eric-alfonce-cv.pdf...</p>`);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'eric-alfonce-cv.pdf';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
+        appendBlock(`<p class="warn-line">CV not available yet — email <a href="mailto:ericgasperalfonce@gmail.com" style="color:var(--cyan)">ericgasperalfonce@gmail.com</a> to request a copy.</p>`);
+      }
+    })
+    .catch(() => {
+      appendBlock(`<p class="warn-line">CV not available yet — email <a href="mailto:ericgasperalfonce@gmail.com" style="color:var(--cyan)">ericgasperalfonce@gmail.com</a> to request a copy.</p>`);
+    });
 }
 
 /* ── Themes ── */
@@ -1228,7 +1259,7 @@ function cmdThemes() {
 /* ── Help ── */
 function cmdHelp() {
   const groups = [
-    { label: 'Core',      cmds: ['/about','/projects','/skills','/security','/certs','/ctf','/philosophy','/uses','/social','/contact'] },
+    { label: 'Core',      cmds: ['/about','/projects','/skills','/security','/certs','/ctf','/philosophy','/uses','/social','/contact','/cv'] },
     { label: 'Shortcuts', cmds: ['/github','/linkedin','/instagram'] },
     { label: 'Themes',    cmds: ['/themes','/dark','/light','/retro','/glass'] },
     { label: 'Fun',       cmds: ['/matrix','/party','/clear','/welcome'] },
