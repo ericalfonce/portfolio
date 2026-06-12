@@ -47,6 +47,13 @@ const PROFILE = {
 
 const PROJECTS = [
   {
+    name: 'IMEI Guard',
+    repo: 'imei-guard',
+    desc: 'East Africa stolen phone registry. FastAPI backend for reporting and checking IMEI numbers against a stolen device database.',
+    tags: ['python', 'security'],
+    url:  'https://github.com/ericalfonce/imei-guard',
+  },
+  {
     name: 'Web Vulnerability Scanner',
     repo: 'web-vuln-scanner',
     desc: 'Python tool that scans web applications for common security vulnerabilities. Detects XSS, SQLi, open redirects and more. Built for ethical security research.',
@@ -351,7 +358,7 @@ const BOOT_MSGS = [
   { t: '[AUTH] Authenticating: eric@alfonce...',         cls: 'boot-warn', ms: 280 },
   { t: '[  OK] Identity verified. Access granted.',      cls: 'boot-ok',   ms: 140 },
   { t: '[LOAD] Reading portfolio data...',               cls: 'boot-info', ms: 200 },
-  { t: '[  OK] projects: 11 loaded',                     cls: 'boot-ok',   ms: 80  },
+  { t: '[  OK] projects: 12 loaded',                     cls: 'boot-ok',   ms: 80  },
   { t: '[  OK] skills: cybersecurity [PRIMARY] — ready', cls: 'boot-ok',   ms: 80  },
   { t: '[  OK] social: 3 profiles linked',               cls: 'boot-ok',   ms: 80  },
   { t: '[ SYS] Starting portfolio shell...',             cls: 'boot-info', ms: 240 },
