@@ -991,10 +991,45 @@ body.custom-cursor-active, body.custom-cursor-active a, body.custom-cursor-activ
    Scroll site — darkroom-style sections
    ================================================================ */
 #site {
+  display: none;
   position: relative;
   background: #0a0a0a;
   color: var(--text);
   z-index: 2;
+}
+body.site-mode #site { display: block; }
+body.site-mode .terminal-wrapper { display: none; }
+
+#nav-toggle {
+  position: fixed;
+  top: 1rem; right: 1rem;
+  z-index: 998;
+  font-family: var(--font);
+  background: var(--win-bg);
+  color: var(--text);
+  border: 1px solid var(--win-border);
+  border-radius: 6px;
+  padding: .4rem .8rem;
+  cursor: pointer;
+}
+
+#transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 997;
+  background: #0a0a0a;
+  pointer-events: none;
+  opacity: 0;
+}
+#transition-overlay.wiping {
+  animation: wipe-flash .4s steps(4) forwards;
+}
+@keyframes wipe-flash {
+  0%   { opacity: 0; }
+  25%  { opacity: 1; }
+  50%  { opacity: 0.2; }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
 }
 .site-section {
   min-height: 100vh;

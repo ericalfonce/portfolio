@@ -69,6 +69,7 @@ const COMMANDS = {
   /* Util */
   '/clear':       { fn: cmdClear,      desc: 'Clear the terminal'              },
   '/welcome':     { fn: cmdWelcome,    desc: 'Show welcome screen'             },
+  '/enter':       { fn: () => { import('./transition.js').then((m) => m.enterSite()); }, desc: 'Enter the full site' },
   /* Easter eggs — desc:null hides from autocomplete/help */
   'whoami':           { fn: cmdWhoami,        desc: null },
   'ls':               { fn: cmdLs,            desc: null },
