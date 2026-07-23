@@ -22,7 +22,9 @@ export function buildSite() {
       </div>
     `;
     grid.appendChild(card);
-    renderProjectArt(card.querySelector('canvas'), p.tags);
+    const canvas = card.querySelector('canvas');
+    canvas.dataset.tags = p.tags.join(',');
+    renderProjectArt(canvas, p.tags);
     card.addEventListener('click', () => window.open(p.url, '_blank', 'noopener'));
   });
 
@@ -54,4 +56,12 @@ export function buildSite() {
   document.querySelector('.site-hero-role').classList.add('reveal-up');
   document.querySelectorAll('.site-heading').forEach((el) => el.classList.add('reveal-up'));
   document.getElementById('site-skills').classList.add('reveal-fill');
+}
+
+/* Re-render project art at correct resolution once #site becomes visible —
+   it's display:none (and thus zero-size) until the visitor enters the site. */
+export function refreshProjectArt() {
+  document.querySelectorAll('.site-project-card canvas').forEach((canvas) => {
+    renderProjectArt(canvas, canvas.dataset.tags.split(','));
+  });
 }

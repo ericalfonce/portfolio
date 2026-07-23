@@ -983,8 +983,8 @@ body.custom-cursor-active, body.custom-cursor-active a, body.custom-cursor-activ
   height: 100vh;
   pointer-events: none;
   z-index: 5;
-  opacity: 0.04;
-  mix-blend-mode: overlay;
+  opacity: 0.05;
+  mix-blend-mode: screen;
 }
 
 /* ================================================================

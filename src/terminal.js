@@ -223,10 +223,10 @@ function runBoot() {
   });
   setTimeout(() => {
     bootScreen.classList.add('hidden');
-    input.focus();
     cmdWelcome();
     startIdle();
     initKonami();
+    import('./transition.js').then((m) => m.enterSite());
   }, delay + 520);
 }
 

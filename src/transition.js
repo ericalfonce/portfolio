@@ -1,4 +1,5 @@
 import { prefersReducedMotion } from './utils.js';
+import { refreshProjectArt } from './site.js';
 
 function playWipe(onMid, done) {
   const overlay = document.getElementById('transition-overlay');
@@ -21,6 +22,7 @@ export function enterSite() {
     document.body.classList.add('site-mode');
     document.getElementById('nav-toggle').textContent = 'terminal';
     window.scrollTo(0, 0);
+    refreshProjectArt();
   });
 }
 
