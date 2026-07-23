@@ -13,6 +13,7 @@ export function buildSite() {
   PROJECTS.forEach((p) => {
     const card = document.createElement('div');
     card.className = 'site-project-card';
+    card.classList.add('reveal-up');
     card.innerHTML = `
       <canvas></canvas>
       <div class="site-project-card-label">
@@ -48,4 +49,9 @@ export function buildSite() {
   const contactLink = document.getElementById('site-contact-email');
   contactLink.href = `mailto:${PROFILE.email}`;
   contactLink.textContent = PROFILE.email;
+
+  document.querySelector('.site-hero-title').classList.add('reveal-up');
+  document.querySelector('.site-hero-role').classList.add('reveal-up');
+  document.querySelectorAll('.site-heading').forEach((el) => el.classList.add('reveal-up'));
+  document.getElementById('site-skills').classList.add('reveal-fill');
 }

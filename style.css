@@ -1073,6 +1073,18 @@ body.custom-cursor-active, body.custom-cursor-active a, body.custom-cursor-activ
   height: 100%;
   width: 0%;
 }
+/* ── Reveal targets (JS adds .revealed on scroll-in) ── */
+.reveal-up {
+  opacity: 0;
+  transform: translateY(40px);
+}
+.reveal-up.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-fill .site-skill-bar-fill {
+  transition: width 1s ease;
+}
 .site-contact-link {
   font-family: 'Inter', sans-serif;
   font-size: clamp(1.5rem, 4vw, 3rem);
