@@ -1127,3 +1127,9 @@ body.site-mode .terminal-wrapper { display: none; }
   text-decoration: none;
   border-bottom: 2px solid var(--red);
 }
+
+@media (max-width: 640px) {
+  .site-section { padding: 12vw 6vw; min-height: auto; padding-top: 4rem; padding-bottom: 4rem; }
+  .site-hero-title { font-size: clamp(2.5rem, 14vw, 4rem); }
+  #nav-toggle { top: .5rem; right: .5rem; padding: .3rem .6rem; font-size: .8rem; }
+}

@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { renderProjectArt } from './project-art.js';
+
+beforeAll(() => {
+  window.matchMedia = window.matchMedia || (() => ({ matches: false }));
+});
 
 describe('renderProjectArt', () => {
   it('draws without throwing for each known tag combination', () => {

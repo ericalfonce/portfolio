@@ -67,7 +67,8 @@ const PATTERNS = { glitch: drawGlitch, matrix: drawMatrix, wireframe: drawWirefr
 
 export function renderProjectArt(canvas, tags) {
   const { pattern, color } = getProjectArtConfig(tags);
-  const dpr = Math.min(window.devicePixelRatio || 1, MAX_DEVICE_PIXEL_RATIO);
+  const isMobile = window.matchMedia('(max-width: 640px)').matches;
+  const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1 : MAX_DEVICE_PIXEL_RATIO);
   const w = canvas.clientWidth || 300;
   const h = canvas.clientHeight || 160;
   canvas.width = w * dpr;
