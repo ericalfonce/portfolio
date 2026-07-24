@@ -123,7 +123,7 @@ function pixelateToCanvas(img, outSize, pixelSize) {
 }
 
 function loadAvatar() {
-  const SOURCES = ['AVATAR.jpg', 'avatar.jpg', 'avatar.jpeg', 'avatar.png', 'avatar.webp', 'photo.jpg'];
+  const SOURCES = ['/AVATAR.jpg', '/avatar.jpg', '/avatar.jpeg', '/avatar.png', '/avatar.webp', '/photo.jpg'];
   let tried = 0;
 
   function tryNext() {
@@ -566,7 +566,7 @@ function openLink(url) {
 
 /* ── Welcome ── */
 function cmdWelcome() {
-  const avatarSrc = avatarSmallUrl || 'AVATAR.jpg';
+  const avatarSrc = avatarSmallUrl || '/AVATAR.jpg';
 
   appendBlock(`
     <div class="welcome-block">
@@ -602,7 +602,7 @@ function cmdWelcome() {
 
 /* ── About ── */
 function cmdAbout() {
-  const avatarSrc = avatarDataUrl || 'AVATAR.jpg';
+  const avatarSrc = avatarDataUrl || '/AVATAR.jpg';
   const avatarHtml = `<div class="avatar-wrap">
        <div class="pixel-avatar">
          <img id="about-avatar-img" src="${avatarSrc}" alt="Eric Alfonce — pixelated portrait" />
