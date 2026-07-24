@@ -32,7 +32,36 @@ export function enterTerminal() {
     document.getElementById('nav-toggle').textContent = 'enter site';
     const input = document.getElementById('cmd-input');
     if (input) input.focus();
+    initScrollGate();
   });
+}
+
+export function initScrollGate() {
+  let triggered = false;
+  let touchStartY = null;
+
+  function trigger() {
+    if (triggered || document.body.classList.contains('site-mode')) return;
+    triggered = true;
+    window.removeEventListener('wheel', onWheel);
+    window.removeEventListener('touchstart', onTouchStart);
+    window.removeEventListener('touchmove', onTouchMove);
+    enterSite();
+  }
+
+  function onWheel(e) {
+    if (e.deltaY > 0) trigger();
+  }
+  function onTouchStart(e) {
+    touchStartY = e.touches[0].clientY;
+  }
+  function onTouchMove(e) {
+    if (touchStartY !== null && touchStartY - e.touches[0].clientY > 24) trigger();
+  }
+
+  window.addEventListener('wheel', onWheel, { passive: true });
+  window.addEventListener('touchstart', onTouchStart, { passive: true });
+  window.addEventListener('touchmove', onTouchMove, { passive: true });
 }
 
 export function initTransitionToggle() {
