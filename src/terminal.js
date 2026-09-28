@@ -4,6 +4,8 @@
 
 'use strict';
 
+import { PROFILE, PROJECTS, SKILLS, CERTS, THEMES, ROUTE_TITLES, FEATURED_PROJECTS as FEATURED } from './data.js';
+
 /* ── DOM refs ── */
 const output       = document.getElementById('output');
 const input        = document.getElementById('cmd-input');
@@ -11,10 +13,14 @@ const acDrop       = document.getElementById('autocomplete');
 const titleEl      = document.getElementById('titlebar-title');
 const terminal     = document.getElementById('terminal');
 const wrapper      = document.getElementById('terminal-wrapper');
-const bootScreen   = document.getElementById('boot-screen');
-const bootLog      = document.getElementById('boot-log');
 const exitModal    = document.getElementById('exit-modal');
 const matCanvas    = document.getElementById('matrix-canvas');
+
+/* Every ref above is required for the terminal to function. If the
+   homepage is ever rendered without the terminal section, bail out
+   quietly instead of throwing on a null listener target. */
+const mounted = Boolean(output && input && wrapper && terminal);
+if (!mounted) console.warn('[terminal] markup not present — terminal disabled.');
 
 /* ── State ── */
 let cmdHistory   = [];
@@ -33,8 +39,6 @@ let currentTheme = localStorage.getItem('ea-theme') || 'dark';
 let avatarDataUrl   = null;   // full-res pixelated data URL
 let avatarSmallUrl  = null;   // 52px version for welcome
 
-import { PROFILE, PROJECTS, SKILLS, CERTS, THEMES, ROUTE_TITLES } from './data.js';
-
 /* ================================================================
    COMMANDS
    ================================================================ */
@@ -44,6 +48,7 @@ const COMMANDS = {
   '/help':        { fn: cmdHelp,       desc: 'Show all available commands'     },
   '/about':       { fn: cmdAbout,      desc: 'About me'                        },
   '/projects':    { fn: cmdProjects,   desc: 'View all my projects'            },
+  '/work':        { fn: cmdWork,       desc: 'Featured case studies (opens in the site)' },
   '/skills':      { fn: cmdSkills,     desc: 'Skills & proficiency levels'     },
   '/security':    { fn: cmdSecurity,   desc: 'Cybersecurity focus area'        },
   '/certs':       { fn: cmdCerts,      desc: 'Certifications & learning path'  },
@@ -181,52 +186,32 @@ function loadAvatar() {
 }
 
 /* ================================================================
-   BOOT SEQUENCE
+   INIT
+   ---------------------------------------------------------------
+   Split from the boot overlay (src/boot.js owns that now) so the
+   terminal can be wired up immediately while the sequence plays, and
+   only "greet" the visitor once the overlay is gone.
    ================================================================ */
 
-const BOOT_MSGS = [
-  { t: '[INIT] eric-portfolio v2.0 — booting...',        cls: 'boot-info', ms: 80  },
-  { t: '[  OK] BIOS v2.0: POST completed',               cls: 'boot-ok',   ms: 100 },
-  { t: '[  OK] CPU: initialized',                        cls: 'boot-ok',   ms: 80  },
-  { t: '[  OK] Memory: 8192MB — healthy',                cls: 'boot-ok',   ms: 90  },
-  { t: '[  OK] Storage: /home/eric — mounted',           cls: 'boot-ok',   ms: 80  },
-  { t: '[  OK] Network: eth0 — connected',               cls: 'boot-ok',   ms: 100 },
-  { t: '[LOAD] Loading kernel modules...',               cls: 'boot-info', ms: 180 },
-  { t: '[  OK] module: design.ko — loaded',              cls: 'boot-ok',   ms: 80  },
-  { t: '[  OK] module: webdev.ko — loaded',              cls: 'boot-ok',   ms: 80  },
-  { t: '[  OK] module: security.ko — loaded',            cls: 'boot-ok',   ms: 80  },
-  { t: '[  OK] module: edtech.ko — loaded',              cls: 'boot-ok',   ms: 100 },
-  { t: '[AUTH] Authenticating: eric@alfonce...',         cls: 'boot-warn', ms: 280 },
-  { t: '[  OK] Identity verified. Access granted.',      cls: 'boot-ok',   ms: 140 },
-  { t: '[LOAD] Reading portfolio data...',               cls: 'boot-info', ms: 200 },
-  { t: '[  OK] projects: 12 loaded',                     cls: 'boot-ok',   ms: 80  },
-  { t: '[  OK] skills: cybersecurity [PRIMARY] — ready', cls: 'boot-ok',   ms: 80  },
-  { t: '[  OK] social: 3 profiles linked',               cls: 'boot-ok',   ms: 80  },
-  { t: '[ SYS] Starting portfolio shell...',             cls: 'boot-info', ms: 240 },
-  { t: '[  OK] Shell ready. Welcome, stranger.',         cls: 'boot-ok',   ms: 120 },
-];
-
-function runBoot() {
+/** Wire up the terminal. Runs as soon as the module evaluates. */
+function initTerminal() {
+  bindTitlebar();
+  bindKeyboard();
+  bindMatrixResize();
   applyTheme(currentTheme);
-  loadAvatar(); // start loading avatar in background
-  let delay = 0;
-  BOOT_MSGS.forEach((msg) => {
-    delay += msg.ms;
-    setTimeout(() => {
-      const span = document.createElement('span');
-      span.className = `boot-line ${msg.cls}`;
-      span.textContent = msg.t;
-      bootLog.appendChild(span);
-      bootLog.scrollTop = bootLog.scrollHeight;
-    }, delay);
-  });
-  setTimeout(() => {
-    bootScreen.classList.add('hidden');
-    input.focus();
-    cmdWelcome();
-    startIdle();
-    initKonami();
-  }, delay + 520);
+  loadAvatar();
+  initKonami();
+}
+
+/**
+ * Called after the boot overlay finishes.
+ * Deliberately does NOT call input.focus() — on a scrolling page that
+ * would yank the viewport to the terminal section on first load.
+ * The welcome block tells the visitor to click the terminal instead.
+ */
+export function terminalReady() {
+  cmdWelcome();
+  startIdle();
 }
 
 /* ================================================================
@@ -234,9 +219,15 @@ function runBoot() {
    ================================================================ */
 
 function startMatrix() {
+  /* The canvas is a decorative overlay; if it is ever missing (stripped
+     markup, a partial embed) the command degrades to a no-op instead of
+     taking the whole terminal down with it. */
+  if (!matCanvas) return;
+
   matCanvas.width  = window.innerWidth;
   matCanvas.height = window.innerHeight;
   matCtx   = matCanvas.getContext('2d');
+  if (!matCtx) return;
   const fs = 14;
   const cols = Math.floor(matCanvas.width / fs);
   matDrops = Array(cols).fill(1);
@@ -266,14 +257,16 @@ function startMatrix() {
 function stopMatrix() {
   if (matRAF) cancelAnimationFrame(matRAF);
   matRAF = null;
-  matCanvas.classList.remove('active');
+  matCanvas?.classList.remove('active');
   if (matCtx) matCtx.clearRect(0, 0, matCanvas.width, matCanvas.height);
   matActive = false;
 }
 
-window.addEventListener('resize', () => {
-  if (matActive) { stopMatrix(); startMatrix(); }
-});
+function bindMatrixResize() {
+  window.addEventListener('resize', () => {
+    if (matActive) { stopMatrix(); startMatrix(); }
+  });
+}
 
 /* ================================================================
    CONFETTI
@@ -302,12 +295,19 @@ function launchConfetti() {
 
 /* ================================================================
    THEME
+   ---------------------------------------------------------------
+   The theme attribute is applied to the terminal wrapper, not
+   <html>. On a scrolling portfolio the global page must stay dark
+   regardless of which terminal theme is active — "light" and
+   "retro" are deliberately contained inside the terminal window.
    ================================================================ */
 
 function applyTheme(name) {
-  document.documentElement.setAttribute('data-theme', name);
+  wrapper.setAttribute('data-theme', name);
   currentTheme = name;
-  localStorage.setItem('ea-theme', name);
+  try {
+    localStorage.setItem('ea-theme', name);
+  } catch { /* private mode */ }
 }
 
 function setTheme(name) {
@@ -323,54 +323,47 @@ function setTheme(name) {
    TITLE BAR BUTTONS
    ================================================================ */
 
-document.getElementById('btn-close').addEventListener('click', () => {
-  exitModal.hidden = false;
-  document.getElementById('exit-cancel').focus();
-});
+function bindTitlebar() {
+  const btnClose  = document.getElementById('btn-close');
+  const btnMin    = document.getElementById('btn-min');
+  const btnMax    = document.getElementById('btn-max');
+  const btnCancel = document.getElementById('exit-cancel');
+  const btnOk     = document.getElementById('exit-confirm');
 
-document.getElementById('exit-cancel').addEventListener('click', () => {
-  exitModal.hidden = true;
-  input.focus();
-});
+  btnClose?.addEventListener('click', () => {
+    exitModal.hidden = false;
+    btnCancel?.focus();
+  });
 
-document.getElementById('exit-confirm').addEventListener('click', () => {
-  exitModal.hidden = true;
-  terminal.style.transition = 'opacity .4s, transform .4s';
-  terminal.style.opacity = '0';
-  terminal.style.transform = 'scale(.95)';
-  setTimeout(() => { terminal.style.display = 'none'; }, 400);
-});
+  btnCancel?.addEventListener('click', () => {
+    exitModal.hidden = true;
+    focusInput();
+  });
 
-document.getElementById('btn-min').addEventListener('click', () => {
-  if (isMinimized) {
-    terminal.classList.remove('minimized');
-    isMinimized = false;
-    setTimeout(() => input.focus(), 350);
-  } else {
-    terminal.classList.add('minimized');
-    isMinimized = true;
-  }
-});
+  btnOk?.addEventListener('click', () => {
+    exitModal.hidden = true;
+    terminal.classList.add('is-closed');
+    output.innerHTML = '';
+  });
 
-document.getElementById('btn-max').addEventListener('click', () => {
-  if (isMaximized) {
-    terminal.classList.remove('maximized');
-    wrapper.classList.remove('maximized');
-    isMaximized = false;
-  } else {
-    terminal.classList.add('maximized');
-    wrapper.classList.add('maximized');
-    isMaximized = true;
-  }
-});
+  btnMin?.addEventListener('click', () => {
+    if (isMinimized) {
+      terminal.classList.remove('minimized');
+      isMinimized = false;
+      setTimeout(focusInput, 350);
+    } else {
+      terminal.classList.add('minimized');
+      isMinimized = true;
+    }
+  });
 
-/* Keyboard: Escape closes modal or un-minimizes */
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    if (!exitModal.hidden) { exitModal.hidden = true; input.focus(); }
-    if (isMinimized) { terminal.classList.remove('minimized'); isMinimized = false; input.focus(); }
-  }
-});
+  btnMax?.addEventListener('click', () => {
+    isMaximized = !isMaximized;
+    terminal.classList.toggle('maximized', isMaximized);
+    wrapper.classList.toggle('maximized', isMaximized);
+    document.body.classList.toggle('term-is-maximized', isMaximized);
+  });
+}
 
 /* ================================================================
    IDLE TIMER
@@ -391,6 +384,7 @@ function resetIdle() {
 }
 
 function startIdle() {
+  clearTimeout(idleTimer);
   idleTimer = setTimeout(function tick() {
     if (idleStep < IDLE_HINTS.length) {
       appendBlock(`<p class="warn-line">${IDLE_HINTS[idleStep]}</p>`);
@@ -402,13 +396,18 @@ function startIdle() {
 
 /* ================================================================
    KONAMI CODE
+   ---------------------------------------------------------------
+   Scoped to the terminal. The previous document-level listener
+   consumed ArrowUp/ArrowDown everywhere, which on a scrolling
+   homepage silently ate the visitor's scroll keys.
    ================================================================ */
 
 function initKonami() {
   const seq = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown',
                 'ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
   let pos = 0;
-  document.addEventListener('keydown', (e) => {
+
+  terminal.addEventListener('keydown', (e) => {
     if (e.key === seq[pos]) {
       pos++;
       if (pos === seq.length) {
@@ -427,48 +426,107 @@ function initKonami() {
    INPUT HANDLING
    ================================================================ */
 
-input.addEventListener('keydown', (e) => {
-  resetIdle();
-  if (e.key === 'Enter') {
-    const val = input.value.trim();
-    input.value = '';
-    hideAC();
-    if (!val) return;
-    cmdHistory.unshift(val);
-    if (cmdHistory.length > 80) cmdHistory.pop();
-    histIdx = -1;
-    echoCmd(val);
-    runCommand(val.toLowerCase());
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    histIdx = Math.min(histIdx + 1, cmdHistory.length - 1);
-    input.value = cmdHistory[histIdx] || '';
-    cursorEnd();
-  } else if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    histIdx = Math.max(histIdx - 1, -1);
-    input.value = histIdx < 0 ? '' : cmdHistory[histIdx];
-    cursorEnd();
-  } else if (e.key === 'Tab') {
-    e.preventDefault();
-    const first = getMatches(input.value)[0];
-    if (first) { input.value = first.cmd; hideAC(); }
-  } else if (e.key === 'Escape') {
-    hideAC();
-  }
-});
+function bindKeyboard() {
+  input.addEventListener('keydown', (e) => {
+    resetIdle();
+    if (e.key === 'Enter') {
+      const val = input.value.trim();
+      input.value = '';
+      hideAC();
+      if (!val) return;
+      cmdHistory.unshift(val);
+      if (cmdHistory.length > 80) cmdHistory.pop();
+      histIdx = -1;
+      echoCmd(val);
+      runCommand(val.toLowerCase());
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      histIdx = Math.min(histIdx + 1, cmdHistory.length - 1);
+      input.value = cmdHistory[histIdx] || '';
+      cursorEnd();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      histIdx = Math.max(histIdx - 1, -1);
+      input.value = histIdx < 0 ? '' : cmdHistory[histIdx];
+      cursorEnd();
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      const first = getMatches(input.value)[0];
+      if (first) { input.value = first.cmd; hideAC(); }
+    } else if (e.key === 'Escape') {
+      hideAC();
+    }
+  });
 
-input.addEventListener('input', () => {
-  const val = input.value;
-  if (!val) { hideAC(); return; }
-  const m = getMatches(val);
-  if (m.length) showAC(m); else hideAC();
-});
+  input.addEventListener('input', () => {
+    const val = input.value;
+    if (!val) { hideAC(); return; }
+    const m = getMatches(val);
+    if (m.length) showAC(m); else hideAC();
+  });
 
-document.addEventListener('click', (e) => {
-  if (!exitModal.hidden) return;
-  if (!isMinimized) input.focus();
-});
+  /* Escape closes the modal / restores a minimized terminal, but only
+     while the terminal actually has focus — otherwise Escape would
+     fight with page-level dialogs and focus rings. */
+  terminal.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (exitModal && !exitModal.hidden) {
+      exitModal.hidden = true;
+      focusInput();
+    }
+    if (isMinimized) {
+      terminal.classList.remove('minimized');
+      isMinimized = false;
+      focusInput();
+    }
+  });
+
+  /* Click-to-focus, scoped to the terminal.
+     The previous document-level handler focused the input on EVERY
+     click anywhere, which on a scrolling page drags the viewport down
+     to the terminal section. */
+  terminal.addEventListener('mousedown', () => {
+    if (exitModal && !exitModal.hidden) return;
+    if (isMinimized) return;
+    /* Defer so the click still lands on the target (e.g. an output
+       link) before focus moves. */
+    setTimeout(focusInput, 0);
+  });
+
+  /* Delegated handlers for the clickable blocks in the output area.
+     These replace inline onclick attributes, which never worked here
+     because this module's scope is not global. */
+  output.addEventListener('click', (e) => {
+    const cmdBtn = e.target.closest('[data-cmd]');
+    if (cmdBtn) {
+      e.preventDefault();
+      runCommand(cmdBtn.dataset.cmd.toLowerCase());
+      scrollToBottom();
+      return;
+    }
+    const themeCard = e.target.closest('[data-theme-key]');
+    if (themeCard) {
+      e.preventDefault();
+      setTheme(themeCard.dataset.themeKey);
+    }
+  });
+
+  output.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const themeCard = e.target.closest('[data-theme-key]');
+    if (!themeCard) return;
+    e.preventDefault();
+    setTheme(themeCard.dataset.themeKey);
+  });
+}
+
+/* preventScroll keeps the viewport still when focus moves into the
+   input — important because the input sits at the bottom of a tall
+   window inside a long scrolling page. */
+function focusInput() {
+  if (isMinimized) return;
+  input.focus({ preventScroll: true });
+}
 
 /* ================================================================
    AUTOCOMPLETE
@@ -486,11 +544,15 @@ function showAC(items) {
      </div>`
   ).join('');
   acDrop.classList.add('visible');
+  input.setAttribute('aria-expanded', 'true');
   acDrop.querySelectorAll('.autocomplete-item').forEach(el => {
-    el.addEventListener('click', () => {
+    el.addEventListener('mousedown', (e) => {
+      /* mousedown, not click: the wrapper's mousedown handler would
+         otherwise re-focus the input and collapse the list first. */
+      e.preventDefault();
       input.value = el.dataset.cmd;
       hideAC();
-      input.focus();
+      focusInput();
     });
   });
 }
@@ -498,6 +560,7 @@ function showAC(items) {
 function hideAC() {
   acDrop.classList.remove('visible');
   acDrop.innerHTML = '';
+  input.setAttribute('aria-expanded', 'false');
 }
 
 /* ================================================================
@@ -577,23 +640,22 @@ function cmdWelcome() {
         </div>
         <div class="welcome-hero-text">
           <p class="welcome-name">Hey, I'm <span class="hl">Eric Alfonce</span></p>
-          <p class="welcome-role">Cybersecurity &nbsp;|&nbsp; Dev &nbsp;|&nbsp; Motion Graphics &nbsp;|&nbsp; EdTech</p>
+          <p class="welcome-role">Cybersecurity &nbsp;|&nbsp; Software &nbsp;|&nbsp; Creative Technology</p>
           <p class="welcome-desc">
-            Security researcher and builder. I find vulnerabilities before the bad guys do,
-            build web apps, design motion graphics, and push EdTech forward — one project at a time.
+            ${PROFILE.statement}
           </p>
         </div>
       </div>
       <div class="quick-links">
-        <button class="cmd-link" onclick="runCommand('/about')">/about</button>
-        <button class="cmd-link" onclick="runCommand('/security')">/security</button>
-        <button class="cmd-link" onclick="runCommand('/projects')">/projects</button>
-        <button class="cmd-link" onclick="runCommand('/skills')">/skills</button>
-        <button class="cmd-link" onclick="runCommand('/certs')">/certs</button>
-        <button class="cmd-link" onclick="runCommand('/contact')">/contact</button>
+        <button class="cmd-link" type="button" data-cmd="/about">/about</button>
+        <button class="cmd-link" type="button" data-cmd="/work">/work</button>
+        <button class="cmd-link" type="button" data-cmd="/security">/security</button>
+        <button class="cmd-link" type="button" data-cmd="/projects">/projects</button>
+        <button class="cmd-link" type="button" data-cmd="/skills">/skills</button>
+        <button class="cmd-link" type="button" data-cmd="/contact">/contact</button>
       </div>
       <p class="hint-line">Type a command or press <kbd style="color:var(--accent)">Tab</kbd> to autocomplete.
-        Use <kbd style="color:var(--accent)">↑↓</kbd> for history.</p>
+        Use <kbd style="color:var(--accent)">↑↓</kbd> for history. Click anywhere in this window to type.</p>
     </div>
   `);
 }
@@ -667,6 +729,29 @@ function cmdProjects() {
     <div>
       <p class="section-title">projects (${PROJECTS.length})</p>
       <div class="projects-grid">${cards}</div>
+    </div>
+  `);
+}
+
+/* ── Featured case studies ── */
+function cmdWork() {
+  const rows = FEATURED.map((p, i) => `
+    <div class="work-row" style="--i:${i}">
+      <span class="work-row-num">${String(p.number).padStart(2, '0')}</span>
+      <span class="work-row-title">${h(p.title)}</span>
+      <a class="work-row-link" href="/work/${h(p.slug)}">${h(p.category)} →</a>
+    </div>
+  `).join('');
+
+  appendBlock(`
+    <div>
+      <p class="section-title">selected work</p>
+      ${rows}
+      <p style="color:var(--muted);font-size:.84rem;margin-top:.6rem">
+        Each row links to a full case study. Open one in a new tab with
+        <span style="color:var(--accent)">/work</span> if you prefer.
+        Type <span style="color:var(--accent)">/projects</span> for the full repository list.
+      </p>
     </div>
   `);
 }
@@ -1084,7 +1169,7 @@ function cmdCv() {
 /* ── Themes ── */
 function cmdThemes() {
   const cards = Object.entries(THEMES).map(([key, { label, desc }]) => `
-    <div class="theme-card ${key === currentTheme ? 'active' : ''}" onclick="setTheme('${key}')">
+    <div class="theme-card${key === currentTheme ? ' active' : ''}" data-theme-key="${h(key)}" role="button" tabindex="0">
       <p class="theme-card-name">${label}${key === currentTheme ? ' ✓' : ''}</p>
       <p class="theme-card-desc">${desc}</p>
     </div>
@@ -1107,7 +1192,7 @@ function cmdThemes() {
 /* ── Help ── */
 function cmdHelp() {
   const groups = [
-    { label: 'Core',      cmds: ['/about','/projects','/skills','/security','/certs','/ctf','/philosophy','/uses','/social','/contact','/cv'] },
+    { label: 'Core',      cmds: ['/about','/projects','/work','/skills','/security','/certs','/ctf','/philosophy','/uses','/social','/contact','/cv'] },
     { label: 'Shortcuts', cmds: ['/github','/linkedin','/instagram'] },
     { label: 'Themes',    cmds: ['/themes','/dark','/light','/retro','/glass'] },
     { label: 'Fun',       cmds: ['/matrix','/party','/clear','/welcome'] },
@@ -1274,4 +1359,16 @@ function cmdHello() {
    INIT
    ================================================================ */
 
-window.addEventListener('DOMContentLoaded', runBoot);
+if (mounted) initTerminal();
+
+/** Exposed so the homepage can run a command from its own UI — the
+    "About Eric" button and the command chips both use this. */
+export function runTerminalCommand(cmd) {
+  if (!mounted) return;
+  input.value = '';
+  hideAC();
+  echoCmd(cmd);
+  runCommand(cmd.toLowerCase());
+  terminal.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+

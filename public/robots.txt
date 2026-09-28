@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ericalfonce-portfolio.vercel.app/sitemap.xml

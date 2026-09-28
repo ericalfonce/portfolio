@@ -16,3 +16,25 @@ export function getProjectArtConfig(tags) {
 export function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
+
+export const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+
+/** "01" … "12" */
+export const pad2 = (n) => String(n).padStart(2, '0');
+
+/** Escape for interpolation into innerHTML. Terminal.js has its own
+    copy of this (`h`); kept separate so the site layer never depends
+    on terminal internals. */
+export function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Strip protocol + trailing slash for display in links. */
+export function prettyUrl(url) {
+  return String(url).replace(/^https?:\/\//, '').replace(/\/$/, '');
+}
