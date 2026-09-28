@@ -1,178 +1,89 @@
 /* ================================================================
-   Project case study page — /work/:slug
+   Case study renderer — /work/:slug
 
-   Structure: hero (title, category, year, large visual) →
-   overview → problem → approach → technology → source → next project.
-
-   Nothing here is invented. Where a field has no verified value
-   (year, role, release status) the row is simply omitted rather
-   than filled with a plausible guess.
+   Same rules as the homepage: generated from data.js, real links
+   only, no invented figures. A project with no public destination
+   simply shows no link rather than a broken one.
    ================================================================ */
 
-import { PROJECTS, getProject, getNextProject, getTechnologies, PROFILE } from '../data.js';
-import { projectArtSVG } from './art.js';
-import { pad2, esc } from '../utils.js';
+import { getProject, getNextProject } from '../data.js';
+import { esc } from '../utils.js';
 
-function metaRow(label, value) {
-  if (!value) return '';
-  return `
-    <div class="pmeta__row">
-      <dt class="pmeta__key">${esc(label)}</dt>
-      <dd class="pmeta__val">${esc(value)}</dd>
-    </div>`;
-}
-
-function featureList(items = []) {
-  if (!items.length) return '';
-  return `
-    <ul class="plist">
-      ${items.map((f) => `<li class="plist__item">${esc(f)}</li>`).join('')}
-    </ul>`;
-}
-
-/* ── Not found ─────────────────────────────────────────────── */
-function renderNotFound(view) {
-  document.title = 'Project not found — Eric Alfonce';
+function notFound(view) {
   view.innerHTML = `
-    <section class="notfound section">
-      <div class="section__head">
-        <span class="section__index">404</span>
-        <span class="section__label">Not found</span>
-      </div>
-      <h1 class="section__title" data-route-heading>
-        <span class="line"><span class="line__in">Project not</span></span>
-        <span class="line"><span class="line__in">found.</span></span>
-      </h1>
-      <p class="intro__body">That project does not exist in this portfolio.</p>
-      <a class="btn btn--ghost" href="/"><span>Back to home</span></a>
-    </section>`;
-}
-
-/* ── Case study ────────────────────────────────────────────── */
-function renderProject(view, project) {
-  const next = getNextProject(project.slug);
-  const tech = getTechnologies(project);
-
-  document.title = `${project.title} — Eric Alfonce`;
-
-  view.innerHTML = `
-    <article class="case">
-      <!-- Hero -->
-      <header class="case__hero">
-        <a class="case__back" href="/#work">
-          <svg width="16" height="10" viewBox="0 0 16 10" fill="none" aria-hidden="true">
-            <path d="M6 1L2 5l4 4M2 5h12" stroke="currentColor" stroke-width="1.3"/>
-          </svg>
-          <span>All work</span>
-        </a>
-
-        <div class="case__headline">
-          <p class="case__num">${pad2(project.number)} <span>/ ${pad2(PROJECTS.length)}</span></p>
-          <h1 class="case__title" data-route-heading>${esc(project.title)}</h1>
-          <p class="case__cat">${esc(project.category)}</p>
-        </div>
-
-        <div class="case__art">${projectArtSVG(project, { w: 1600, h: 900 })}</div>
-
-        <dl class="pmeta">
-          ${metaRow('Category', project.category)}
-          ${metaRow('Year', project.year)}
-          ${metaRow('Repository', project.url.replace(/^https?:\/\//, ''))}
-        </dl>
-      </header>
-
-      <!-- Overview -->
-      <section class="case__section">
-        <div class="case__aside">
-          <span class="case__aside-num">01</span>
-          <span class="case__aside-label">Overview</span>
-        </div>
-        <div class="case__body">
-          <p class="case__lead">${esc(project.description)}</p>
-        </div>
-      </section>
-
-      <!-- Problem -->
-      <section class="case__section">
-        <div class="case__aside">
-          <span class="case__aside-num">02</span>
-          <span class="case__aside-label">Problem</span>
-        </div>
-        <div class="case__body">
-          <p class="case__text">${esc(project.problem)}</p>
-        </div>
-      </section>
-
-      <!-- Solution -->
-      <section class="case__section">
-        <div class="case__aside">
-          <span class="case__aside-num">03</span>
-          <span class="case__aside-label">Approach</span>
-        </div>
-        <div class="case__body">
-          <p class="case__text">${esc(project.approach)}</p>
-          ${featureList(project.features)}
-        </div>
-      </section>
-
-      <!-- Technology -->
-      <section class="case__section">
-        <div class="case__aside">
-          <span class="case__aside-num">04</span>
-          <span class="case__aside-label">Technology</span>
-        </div>
-        <div class="case__body">
-          <ul class="chips">
-            ${tech.map((t) => `<li class="chip">${esc(t)}</li>`).join('')}
-          </ul>
-        </div>
-      </section>
-
-      <!-- Visual -->
-      <section class="case__section case__section--wide">
-        <div class="case__art case__art--detail">${projectArtSVG(project, { w: 1600, h: 900 })}</div>
-      </section>
-
-      <!-- Source -->
-      <section class="case__section">
-        <div class="case__aside">
-          <span class="case__aside-num">05</span>
-          <span class="case__aside-label">Source</span>
-        </div>
-        <div class="case__body">
-          <p class="case__text">
-            ${esc(project.title)} is published as a public repository on GitHub. The source is the
-            most current and accurate description of the project.
-          </p>
-          <p class="case__text case__text--muted">
-            Built with ${tech.map((t) => esc(t)).join(', ')}.
-          </p>
-          <a class="btn btn--ghost" href="${esc(project.url)}" data-native target="_blank" rel="noopener">
-            <span>View source</span>
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-              <path d="M3 1h5v5M8 1L1 8M1 5v5h5" stroke="currentColor" stroke-width="1.2"/>
-            </svg>
-          </a>
-        </div>
-      </section>
-
-      <!-- Next project -->
-      ${
-        next
-          ? `<a class="next" href="/work/${esc(next.slug)}">
-              <span class="next__label">Next project</span>
-              <span class="next__title">${esc(next.title)}</span>
-              <span class="next__arrow" aria-hidden="true">→</span>
-            </a>`
-          : ''
-      }
-    </article>`;
+    <div class="case">
+      <a class="case__back" href="/">&larr; Work</a>
+      <h1 class="case__name">Not found</h1>
+      <p class="case__meta">That project is not in the index.</p>
+      <a class="link-arrow" href="/"><span>Back to work</span></a>
+    </div>
+  `;
 }
 
 export function renderProjectRoute(view, slug) {
-  const project = getProject(slug);
-  if (!project) renderNotFound(view);
-  else renderProject(view, project);
-}
+  if (!view) return;
 
-export { PROFILE };
+  const project = getProject(slug);
+  if (!project) { notFound(view); return; }
+
+  const meta = [project.category, project.year].filter(Boolean).join(' · ');
+
+  const stack = project.stack.length
+    ? `
+      <div class="case__block">
+        <h2 class="case__block-title">Stack</h2>
+        <p class="case__stack">${project.stack.map(esc).join(' · ')}</p>
+      </div>
+    `
+    : '';
+
+  const mark = project.mark
+    ? `<img class="case__mark" src="/img/${esc(project.mark)}" alt="${esc(project.name)}" decoding="async" />`
+    : '';
+
+  const links = [];
+  if (project.url) {
+    links.push(`
+      <a class="link-arrow" href="${esc(project.url)}" data-native target="_blank" rel="noopener">
+        <span>${esc(project.url.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</span>
+      </a>
+    `);
+  }
+  if (project.repo && project.repo !== project.url) {
+    links.push(`
+      <a class="link-arrow" href="${esc(project.repo)}" data-native target="_blank" rel="noopener">
+        <span>github.com/${esc(project.repo.split('/').pop())}</span>
+      </a>
+    `);
+  }
+
+  const next = getNextProject(slug);
+
+  view.innerHTML = `
+    <div class="case">
+      <a class="case__back" href="/">&larr; Work</a>
+
+      <h1 class="case__name" data-route-heading>${esc(project.name)}</h1>
+      <p class="case__meta">${esc(meta)}</p>
+
+      <p class="case__summary">${esc(project.summary)}</p>
+
+      ${mark ? `<div class="case__visual">${mark}</div>` : ''}
+
+      <div class="case__prose">
+        ${project.body.map((para) => `<p>${esc(para)}</p>`).join('')}
+      </div>
+
+      ${stack}
+
+      ${links.length ? `<div class="case__actions">${links.join('')}</div>` : ''}
+
+      ${next ? `
+        <a class="case__next" href="/work/${esc(next.slug)}">
+          <span class="case__next-label">Next</span>
+          <span class="case__next-name">${esc(next.name)}</span>
+        </a>
+      ` : ''}
+    </div>
+  `;
+}

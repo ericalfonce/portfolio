@@ -1,23 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /* ================================================================
    Markup contract.
 
-   index.html was rewritten wholesale, so a typo in an id or a
-   data-hook shows up as a silently dead feature rather than a build
-   error. This walks every selector the JS actually queries and asserts
-   the static markup provides it.
-
-   Hooks that the JS creates at runtime (inside its own template
-   strings) are allowlisted below — they legitimately have no static
-   counterpart.
+   index.html and the data layer were both rewritten, so a typo in an
+   id or a data-hook shows up as a silently dead feature rather than a
+   build error. This walks every selector the JS actually queries and
+   asserts the static markup provides it, then pins the specific
+   decisions this redesign was made to guarantee.
    ================================================================ */
 
 const root = resolvePath(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(root, 'index.html'), 'utf8');
+const css  = readFileSync(join(root, 'style.css'), 'utf8');
 
 /** Every .js under src/, excluding tests. */
 function sourceFiles(dir = join(root, 'src'), out = []) {
@@ -31,11 +29,7 @@ function sourceFiles(dir = join(root, 'src'), out = []) {
 
 const SOURCES = sourceFiles().map((f) => [f.slice(root.length + 1), readFileSync(f, 'utf8')]);
 
-/* Created inside JS template strings, so absent from index.html. */
-const RUNTIME_ONLY_IDS = new Set(['welcome-avatar-img', 'about-avatar-img']);
-const RUNTIME_ONLY_HOOKS = new Set(['data-tilt', 'data-pct']);
-
-const staticIds = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
+const staticIds   = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
 const staticHooks = new Set([...html.matchAll(/\b(data-[a-z-]+)(?==|\s|>)/g)].map((m) => m[1]));
 
 /** id + data-* selectors referenced from a source file. */
@@ -61,7 +55,7 @@ describe('markup contract', () => {
     const missing = [];
     for (const [file, src] of SOURCES) {
       for (const id of references(src).ids) {
-        if (staticIds.has(id) || RUNTIME_ONLY_IDS.has(id)) continue;
+        if (staticIds.has(id)) continue;
         missing.push(`${id}  (referenced in ${file})`);
       }
     }
@@ -72,7 +66,7 @@ describe('markup contract', () => {
     const missing = [];
     for (const [file, src] of SOURCES) {
       for (const hook of references(src).hooks) {
-        if (staticHooks.has(hook) || RUNTIME_ONLY_HOOKS.has(hook)) continue;
+        if (staticHooks.has(hook)) continue;
         missing.push(`${hook}  (referenced in ${file})`);
       }
     }
@@ -100,13 +94,6 @@ describe('markup contract', () => {
     expect(html).toContain('id="boot-log"');
   });
 
-  it('locks scrolling while booting, and releases it on .is-booted', () => {
-    const css = readFileSync(join(root, 'style.css'), 'utf8');
-    expect(css).toMatch(/html\.is-booting[^{]*\{[^}]*overflow:\s*hidden/);
-    /* Nothing may keep the lock once boot has handed over. */
-    expect(css).not.toMatch(/html\.is-booted[^{]*\{[^}]*overflow:\s*hidden/);
-  });
-
   it('gives the terminal section and the terminal window different ids', () => {
     /* A shared id would make getElementById('terminal') return the
        section, and the window CSS (.terminal-window.maximized) would
@@ -120,9 +107,7 @@ describe('markup contract', () => {
   it('anchors the terminal nav links at the section, not the window', () => {
     const anchors = [...html.matchAll(/href="[^"]*#terminal[^"]*"/g)].map((m) => m[0]);
     expect(anchors.length).toBeGreaterThan(0);
-    for (const a of anchors) {
-      expect(a).toMatch(/#terminal-section/);
-    }
+    for (const a of anchors) expect(a).toMatch(/#terminal-section/);
   });
 
   it('escapes the noscript boot trap — no-JS visitors can read the page', () => {
@@ -131,12 +116,106 @@ describe('markup contract', () => {
     expect(noscript).toMatch(/#boot-screen\s*\{\s*display:\s*none\s*!important/);
   });
 
-  it('keeps the terminal theme scoped to the terminal wrapper', () => {
-    const css = readFileSync(join(root, 'style.css'), 'utf8');
-    /* A bare html[data-theme='retro'] rule would restyle the whole page. */
-    expect(css).not.toMatch(/html\[data-theme=['"]retro/);
-    expect(css).toMatch(/\.terminal-wrapper\[data-theme=['"]retro/);
-    expect(html).toContain('id="terminal-wrapper"');
+  it('hides the page until boot hands over, then shows it', () => {
+    expect(css).toMatch(/html\s*\{[^}]*opacity:\s*0/);
+    expect(css).toMatch(/html\.is-booted\s*\{[^}]*opacity:\s*1/);
+  });
+});
+
+/* ================================================================
+   The redesign's explicit requirements, pinned as tests so a later
+   change cannot quietly reintroduce them.
+   ================================================================ */
+describe('restrained structure', () => {
+  it('carries no ambient effect layers', () => {
+    for (const gone of [
+      'cursor-dot', 'cursor-ring', 'cursor-label',
+      'grain-canvas', 'matrix-canvas', 'bg-layer',
+      'footer__marquee', 'data-marquee', 'data-hero-visual', 'data-parallax',
+    ]) {
+      expect(html, `${gone} should be gone`).not.toContain(gone);
+    }
+  });
+
+  it('has no numbered section labels', () => {
+    expect(html).not.toMatch(/section__index/);
+    expect(css).not.toMatch(/\.section__index/);
+    /* The mobile menu used to prefix every link with 01, 02, 03 … */
+    const menu = html.slice(html.indexOf('id="mobile-menu"'), html.indexOf('mobile-menu__foot'));
+    expect(menu).not.toMatch(/>\s*0\d\s/);
+  });
+
+  it('says exactly name, discipline and location in the hero', () => {
+    const hero = html.slice(html.indexOf('class="hero"'), html.indexOf('class="work section"'));
+    const text = hero
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/\s+/g, ' ')
+      .trim();
+    expect(text).toContain('ERIC ALFONCE');
+    expect(text).toContain('Cybersecurity & Software');
+    expect(text).toContain('Tanzania');
+    /* No secondary tagline, scroll cue or statement paragraph. */
+    expect(html).not.toContain('hero__statement');
+    expect(html).not.toContain('hero__scroll');
+    expect(html).not.toContain('hero__meta');
+  });
+
+  it('keeps the footer to the name and the year', () => {
+    const footer = html.slice(html.indexOf('<footer'), html.indexOf('</footer>'));
+    const links = footer.match(/<a\b/g) || [];
+    expect(links, 'footer should have no links').toHaveLength(0);
+    expect(footer).toContain('data-year');
+    expect(footer).toContain('footer__name');
+  });
+
+  it('has no capabilities grid or intro manifesto', () => {
+    expect(html).not.toContain('data-caps-grid');
+    expect(html).not.toContain('caps__grid');
+    expect(html).not.toContain('intro__statement');
+    expect(html).not.toContain('id="intro"');
+  });
+
+  it('uses the sampled brand palette and only one accent hue', () => {
+    expect(css).toContain('--bg:          #080E14');
+    expect(css).toContain('--accent:      #22D3EE');
+    /* No gradients or glowing text-shadows anywhere. */
+    expect(css).not.toMatch(/linear-gradient/);
+    expect(css).not.toMatch(/radial-gradient/);
+    expect(css).not.toMatch(/text-shadow/);
+    expect(css).not.toMatch(/box-shadow/);
+  });
+
+  it('loads exactly two font families', () => {
+    const fonts = html.match(/fonts\.googleapis\.com\/css2\?([^"]+)"/)?.[1] || '';
+    const families = fonts.match(/family=([^:&]+)/g) || [];
+    expect(families).toHaveLength(2);
+  });
+
+  it('keeps the name as the only oversized type', () => {
+    const h1Size = css.match(/\.hero__name\s*\{[^}]*font-size:\s*clamp\([^)]*\)/)?.[0] || '';
+    const sectionSize = css.match(/\.section__title\s*\{[^}]*font-size:\s*clamp\([^)]*\)/)?.[0] || '';
+    const heroMin = Number(h1Size.match(/clamp\(([\d.]+)rem/)?.[1]);
+    const sectionMax = Number(sectionSize.match(/,\s*([\d.]+)rem\)/)?.[1]);
+    expect(heroMin).toBeGreaterThan(sectionMax);
+  });
+
+  it('respects prefers-reduced-motion', () => {
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
+
+    /* Every animation must be backed by real keyframes. */
+    const names = [...css.matchAll(/\banimation:\s*([a-z][a-z-]*)/g)].map((m) => m[1]);
+    expect(names.length).toBeGreaterThan(0);
+    for (const name of new Set(names)) {
+      expect(css, `${name} is animated but has no @keyframes`).toMatch(
+        new RegExp(`@keyframes\\s+${name}\\b`)
+      );
+    }
+
+    /* And the opt-out has to actually neutralise them. */
+    const block = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
+    expect(block).toMatch(/animation-duration:\s*0\.01ms/);
+    expect(block).toMatch(/transition-duration:\s*0\.01ms/);
   });
 });
 
@@ -152,9 +231,16 @@ describe('seo shell', () => {
     expect(html).toContain('name="twitter:card"');
   });
 
-  it('points social images at the local favicon, not a hotlinked asset', () => {
+  it('points the social image at a local asset', () => {
     const ogImage = html.match(/property="og:image"\s+content="([^"]+)"/)?.[1];
     expect(ogImage).toBeTruthy();
-    expect(ogImage).not.toMatch(/^https?:\/\/(?!ericalfonce)/);
+    expect(ogImage).toMatch(/ericalfonce-portfolio\.vercel\.app\//);
+  });
+
+  it('lists the same social profiles that are in the data layer', () => {
+    const data = readFileSync(join(root, 'src/data.js'), 'utf8');
+    for (const u of ['github.com/ericalfonce', 'linkedin.com/in/ericalfonce', 'instagram.com/ericalfonce']) {
+      expect(data, `data.js should contain ${u}`).toContain(u);
+    }
   });
 });

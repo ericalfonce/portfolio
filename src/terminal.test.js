@@ -2,31 +2,28 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vites
 
 /* terminal.js reads the DOM at import time and installs its listeners
    on load, so the markup is staged first and the module is imported
-   once for the whole file. These are the paths the refactor touched:
-   event scoping, delegated quick-links/themes, /work, and the exports
-   main.js drives. */
+   once for the whole file. The ids below mirror index.html. */
 
 const TERMINAL_MARKUP = `
-  <canvas id="matrix-canvas"></canvas>
-  <div id="confetti-layer"></div>
   <div class="view view--home" data-view="home">
-    <nav data-nav></nav>
     <section class="term" id="terminal-section">
-      <div class="terminal-wrapper" id="terminal-wrapper" data-theme="dark">
+      <div class="terminal-wrapper" id="terminal-wrapper">
         <div class="terminal-window" id="terminal">
-          <div class="titlebar" id="titlebar">
-            <div class="titlebar-title" id="titlebar-title">eric@portfolio: ~</div>
-            <div class="titlebar-buttons">
-              <button class="tbtn" data-action="minimize">min</button>
-              <button class="tbtn" data-action="maximize">max</button>
-              <button class="tbtn" data-action="close">close</button>
+          <div class="titlebar">
+            <div class="titlebar-controls">
+              <button class="ctrl" id="btn-close"></button>
+              <button class="ctrl" id="btn-min"></button>
+              <button class="ctrl" id="btn-max"></button>
             </div>
+            <div class="titlebar-title" id="titlebar-title">eric@portfolio:~$</div>
           </div>
           <div class="terminal-output" id="output" role="log"></div>
-          <div class="autocomplete-dropdown" id="autocomplete"></div>
-          <div class="input-line">
+          <div class="terminal-input-row">
             <label for="cmd-input">eric@portfolio:~$</label>
-            <input id="cmd-input" autocomplete="off" />
+            <div class="input-wrap">
+              <input id="cmd-input" autocomplete="off" aria-autocomplete="list" aria-expanded="false" aria-controls="autocomplete" />
+              <div class="autocomplete-dropdown" id="autocomplete" role="listbox"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -34,14 +31,14 @@ const TERMINAL_MARKUP = `
   </div>
   <div id="exit-modal" hidden>
     <p id="exit-modal-title">Close terminal?</p>
-    <button id="exit-cancel">Stay</button>
-    <button id="exit-ok">Close</button>
+    <button id="exit-cancel">Cancel</button>
+    <button id="exit-confirm">Close</button>
   </div>
 `;
 
 let term;
 const output = () => document.getElementById('output');
-const input = () => document.getElementById('cmd-input');
+const input  = () => document.getElementById('cmd-input');
 
 /** Type a command the way a visitor would and press Enter. */
 function run(cmd) {
@@ -52,10 +49,6 @@ function run(cmd) {
 
 beforeAll(async () => {
   document.body.innerHTML = TERMINAL_MARKUP;
-
-  /* jsdom has no canvas 2d context and no rAF-backed frames. */
-  HTMLCanvasElement.prototype.getContext = vi.fn(() => null);
-
   vi.resetModules();
   term = await import('./terminal.js');
 });
@@ -70,48 +63,19 @@ beforeEach(() => {
 });
 
 describe('module contract', () => {
-  it('exports the hooks main.js drives', () => {
+  it('exports the hook main.js drives', () => {
     expect(typeof term.terminalReady).toBe('function');
-    expect(typeof term.runTerminalCommand).toBe('function');
   });
 
   it('imports without throwing and wires itself up on load', () => {
-    expect(document.getElementById('terminal-wrapper').dataset.theme).toBeTruthy();
+    expect(document.getElementById('titlebar-title').textContent).toBe('eric@portfolio:~$');
   });
 });
 
 describe('terminalReady', () => {
-  it('prints the welcome block exactly once per call', () => {
+  it('prints a welcome block', () => {
     term.terminalReady();
-    const first = output().textContent;
-    expect(first.length).toBeGreaterThan(0);
-
-    output().innerHTML = '';
-    term.terminalReady();
-    expect(output().textContent.length).toBeGreaterThan(0);
-  });
-});
-
-describe('runTerminalCommand', () => {
-  it('executes a command and writes its output', () => {
-    term.runTerminalCommand('/help');
-    const text = output().textContent.toLowerCase();
-    expect(text).toContain('command');
-  });
-
-  it('reports unknown commands rather than throwing', () => {
-    expect(() => term.runTerminalCommand('/definitely-not-a-command')).not.toThrow();
-    expect(output().textContent.toLowerCase()).toContain('not');
-  });
-
-  it('exposes /work and renders the project palette', () => {
-    term.runTerminalCommand('/work');
-    expect(output().textContent.toLowerCase()).toContain('work');
-  });
-
-  it('escapes command output instead of injecting it as HTML', () => {
-    term.runTerminalCommand('<img src=x onerror=alert(1)>');
-    expect(output().querySelector('img')).toBeNull();
+    expect(output().textContent).toContain('Eric Alfonce');
   });
 });
 
@@ -126,51 +90,131 @@ describe('command palette', () => {
     expect(output().textContent.trim()).toBe('');
   });
 
-  it('renders /projects from the real project data', () => {
-    run('/projects');
-    const text = output().textContent;
-    expect(text).toContain('IMEI Guard');
-    expect(text).toContain('AgriMarket');
+  it('reports unknown commands rather than throwing', () => {
+    expect(() => run('/definitely-not-a-command')).not.toThrow();
+    expect(output().textContent.toLowerCase()).toContain('not found');
+  });
+
+  it('escapes command output instead of injecting it as HTML', () => {
+    run('<img src=x onerror=alert(1)>');
+    expect(output().querySelector('img')).toBeNull();
+  });
+
+  it('clears the buffer on /clear', () => {
+    run('/help');
+    expect(output().textContent.length).toBeGreaterThan(0);
+    run('/clear');
+    expect(output().textContent.trim()).toBe('');
   });
 });
 
-describe('themes are scoped to the terminal', () => {
-  it('sets the theme attribute on the wrapper, not the document', () => {
-    run('/light');
-    expect(document.getElementById('terminal-wrapper').dataset.theme).toBe('light');
-    /* The page around the terminal must stay dark regardless. */
-    expect(document.documentElement.dataset.theme).toBeUndefined();
-    expect(document.body.dataset.theme).toBeUndefined();
+describe('commands reflect the verified data', () => {
+  it('renders /projects from the real project list', () => {
+    run('/projects');
+    const text = output().textContent;
+    expect(text).toContain('MulikaScans');
+    expect(text).toContain('Lab Logbook');
+    /* Dropped in the rewrite because the repositories do not exist. */
+    expect(text).not.toContain('IMEI Guard');
   });
 
-  it('switches to retro and glass, still contained in the wrapper', () => {
-    run('/retro');
-    expect(document.getElementById('terminal-wrapper').dataset.theme).toBe('retro');
-
-    run('/glass');
-    expect(document.getElementById('terminal-wrapper').dataset.theme).toBe('glass');
-
-    expect(document.documentElement.dataset.theme).toBeUndefined();
+  it('renders /work as a case-study index', () => {
+    run('/work');
+    expect(output().querySelector('a[href="/work/mulikascans"]')).not.toBeNull();
   });
 
-  it('restores to dark', () => {
-    run('/light');
-    run('/dark');
-    expect(document.getElementById('terminal-wrapper').dataset.theme).toBe('dark');
+  it('renders /skills as plain grouped text with no percentages', () => {
+    run('/skills');
+    const text = output().textContent;
+    expect(text).toContain('PostgreSQL');
+    expect(text).not.toMatch(/\d+%/);
   });
 
-  it('persists the choice so a reload keeps it', () => {
-    run('/retro');
-    expect(localStorage.getItem('ea-theme')).toBe('retro');
-    run('/dark');
+  it('shows the real contact links', () => {
+    run('/contact');
+    const text = output().textContent;
+    expect(text).toContain('github.com/ericalfonce');
+    expect(text).toContain('in/ericalfonce');
+  });
+
+  it('makes no unverifiable claims anywhere', () => {
+    for (const cmd of ['/about', '/help', '/projects', '/work', '/skills', '/contact', 'cat readme.md']) {
+      run(cmd);
+      const text = output().textContent;
+      for (const claim of [/certified/i, /OSCP/, /CEH/, /in progress/i, /open to (work|opportunit)/i, /\d+%/]) {
+        expect(text, `${cmd} matched ${claim}`).not.toMatch(claim);
+      }
+    }
+  });
+});
+
+describe('autocomplete', () => {
+  it('suggests matching commands and completes with Tab', () => {
+    const el = input();
+    el.value = '/wor';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+
+    const drop = document.getElementById('autocomplete');
+    expect(drop.classList.contains('visible')).toBe(true);
+    expect(el.getAttribute('aria-expanded')).toBe('true');
+
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(el.value).toBe('/work');
+  });
+
+  it('hides when the value is cleared', () => {
+    const el = input();
+    el.value = '/wor';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.value = '';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+
+    const drop = document.getElementById('autocomplete');
+    expect(drop.classList.contains('visible')).toBe(false);
+  });
+});
+
+describe('titlebar controls', () => {
+  it('minimizes and restores', () => {
+    const win = document.getElementById('terminal');
+    document.getElementById('btn-min').click();
+    expect(win.classList.contains('minimized')).toBe(true);
+    document.getElementById('btn-min').click();
+    expect(win.classList.contains('minimized')).toBe(false);
+  });
+
+  it('maximizes and toggles the body scroll lock', () => {
+    document.getElementById('btn-max').click();
+    expect(document.getElementById('terminal').classList.contains('maximized')).toBe(true);
+    expect(document.body.classList.contains('term-is-maximized')).toBe(true);
+
+    document.getElementById('btn-max').click();
+    expect(document.body.classList.contains('term-is-maximized')).toBe(false);
+  });
+
+  it('asks before closing, then clears the buffer', () => {
+    run('/help');
+    expect(output().textContent).not.toBe('');
+
+    const modal = document.getElementById('exit-modal');
+    document.getElementById('btn-close').click();
+    expect(modal.hidden).toBe(false);
+
+    document.getElementById('exit-cancel').click();
+    expect(modal.hidden).toBe(true);
+    expect(output().textContent).not.toBe('');
+
+    document.getElementById('btn-close').click();
+    document.getElementById('exit-confirm').click();
+    expect(output().textContent.trim()).toBe('');
   });
 });
 
 describe('event scoping', () => {
   it('clicking the terminal focuses its input', () => {
-    const win = document.getElementById('terminal');
     const spy = vi.spyOn(input(), 'focus');
-    win.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    document.getElementById('terminal')
+      .dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
     /* focus is deferred to the next task so mousedown never fights the
        browser's own focus handling. */
     return new Promise((r) => setTimeout(r, 0)).then(() => {
@@ -179,19 +223,18 @@ describe('event scoping', () => {
   });
 
   it('does not hijack typing outside the terminal', () => {
-    /* A stray keydown on document must not reach the command parser. */
+    run('/help');
     const before = output().innerHTML;
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
     expect(output().innerHTML).toBe(before);
   });
 
   it('delegates quick-link clicks on command output', () => {
-    run('/work');
+    term.terminalReady();
     const link = output().querySelector('[data-cmd]');
-    if (!link) return;
-    const ev = new MouseEvent('click', { bubbles: true, cancelable: true });
-    link.dispatchEvent(ev);
-    expect(ev.defaultPrevented).toBe(false);
+    expect(link).not.toBeNull();
+    link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(output().textContent.toLowerCase()).toContain('about');
   });
 });
 

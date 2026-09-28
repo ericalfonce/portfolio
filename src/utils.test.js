@@ -1,37 +1,41 @@
 import { describe, it, expect, vi } from 'vitest';
-import { getProjectArtConfig, prefersReducedMotion } from './utils.js';
+import { esc, prefersReducedMotion } from './utils.js';
 
-describe('getProjectArtConfig', () => {
-  it('maps security/cyber tags to the glitch pattern in red', () => {
-    expect(getProjectArtConfig(['python', 'security'])).toEqual({ pattern: 'glitch', color: '#fa4a6e' });
-    expect(getProjectArtConfig(['cyber'])).toEqual({ pattern: 'glitch', color: '#fa4a6e' });
+describe('esc', () => {
+  it('escapes the characters that can break out of an attribute or tag', () => {
+    expect(esc('<script>alert(1)</script>'))
+      .toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(esc('a & b')).toBe('a &amp; b');
+    expect(esc('say "hi"')).toBe('say &quot;hi&quot;');
+    expect(esc("it's")).toBe('it&#39;s');
   });
 
-  it('maps python-only tags to the matrix pattern in green', () => {
-    expect(getProjectArtConfig(['python'])).toEqual({ pattern: 'matrix', color: '#4afa9a' });
+  it('escapes ampersands before the entities it introduces', () => {
+    /* A naive order would turn &lt; into &amp;lt; */
+    expect(esc('&lt;')).toBe('&amp;lt;');
   });
 
-  it('maps html/css tags to the wireframe pattern in muted', () => {
-    expect(getProjectArtConfig(['html', 'css'])).toEqual({ pattern: 'wireframe', color: '#9b9bbf' });
+  it('coerces non-strings', () => {
+    expect(esc(42)).toBe('42');
+    expect(esc(null)).toBe('null');
+    expect(esc(undefined)).toBe('undefined');
   });
 
-  it('falls back to default pattern for unrecognized tags', () => {
-    expect(getProjectArtConfig(['cloud'])).toEqual({ pattern: 'default', color: '#9b9bbf' });
-  });
-
-  it('prioritizes security over other matches when multiple tags present', () => {
-    expect(getProjectArtConfig(['html', 'security'])).toEqual({ pattern: 'glitch', color: '#fa4a6e' });
+  it('leaves plain text untouched', () => {
+    expect(esc('MulikaScans')).toBe('MulikaScans');
+    expect(esc('Python · Flask · PostgreSQL')).toBe('Python · Flask · PostgreSQL');
   });
 });
 
 describe('prefersReducedMotion', () => {
-  it('returns true when matchMedia reports reduced motion', () => {
-    vi.stubGlobal('matchMedia', () => ({ matches: true }));
-    expect(prefersReducedMotion()).toBe(true);
-  });
+  it('reflects the media query', () => {
+    /* jsdom does not implement matchMedia, so it is stubbed here. */
+    const original = window.matchMedia;
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
 
-  it('returns false when matchMedia reports no preference', () => {
-    vi.stubGlobal('matchMedia', () => ({ matches: false }));
-    expect(prefersReducedMotion()).toBe(false);
+    expect(prefersReducedMotion()).toBe(true);
+    expect(window.matchMedia).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)');
+
+    window.matchMedia = original;
   });
 });

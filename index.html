@@ -1,99 +1,91 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#070707" />
+  <meta name="theme-color" content="#080E14" />
 
   <!-- Primary SEO -->
-  <title>Eric Alfonce | Cybersecurity, Software &amp; Creative Technology</title>
-  <meta name="description" content="Portfolio of Eric Alfonce showcasing cybersecurity tools, software projects, networking systems, IoT projects and creative technology work." />
-  <meta name="keywords" content="Eric Alfonce, cybersecurity, web application security, vulnerability scanner, ethical hacker, penetration testing, network security, software developer, Python, FastAPI, IoT, ESP32, EdTech, IklwaLabs, Tanzania" />
+  <title>Eric Alfonce — Cybersecurity &amp; Software</title>
+  <meta name="description" content="Eric Alfonce is a cybersecurity specialist and software developer in Arusha, Tanzania. He builds tools that keep East African businesses secure — web vulnerability scanning, fintech and payment integrations." />
   <meta name="author" content="Eric Alfonce" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://ericalfonce-portfolio.vercel.app/" />
 
-  <!-- Open Graph (Facebook, LinkedIn previews) -->
+  <!-- Open Graph -->
   <meta property="og:type"        content="profile" />
   <meta property="og:url"         content="https://ericalfonce-portfolio.vercel.app/" />
-  <meta property="og:title"       content="Eric Alfonce | Cybersecurity, Software &amp; Creative Technology" />
-  <meta property="og:description" content="Building secure digital products, systems and technology-driven experiences. Security tooling, software, networking and creative technology." />
-  <meta property="og:image"       content="https://ericalfonce-portfolio.vercel.app/AVATAR.jpg" />
-  <meta property="og:image:alt"   content="Eric Alfonce" />
+  <meta property="og:title"       content="Eric Alfonce — Cybersecurity &amp; Software" />
+  <meta property="og:description" content="Tools that keep East African businesses secure. Web vulnerability scanning, fintech and payment integrations." />
+  <meta property="og:image"       content="https://ericalfonce-portfolio.vercel.app/img/mulikascans-logo.png" />
   <meta property="og:locale"      content="en_US" />
   <meta property="profile:first_name" content="Eric" />
   <meta property="profile:last_name"  content="Alfonce" />
   <meta property="profile:username"   content="ericalfonce" />
 
-  <!-- Twitter / X Card -->
-  <meta name="twitter:card"        content="summary_large_image" />
-  <meta name="twitter:site"        content="@ericalfonce" />
-  <meta name="twitter:creator"     content="@ericalfonce" />
-  <meta name="twitter:title"       content="Eric Alfonce | Cybersecurity, Software &amp; Creative Technology" />
-  <meta name="twitter:description" content="Building secure digital products, systems and technology-driven experiences." />
-  <meta name="twitter:image"       content="https://ericalfonce-portfolio.vercel.app/AVATAR.jpg" />
-  <meta name="twitter:image:alt"   content="Eric Alfonce" />
+  <!-- Twitter / X -->
+  <meta name="twitter:card"        content="summary" />
+  <meta name="twitter:title"       content="Eric Alfonce — Cybersecurity &amp; Software" />
+  <meta name="twitter:description" content="Tools that keep East African businesses secure." />
 
-  <!-- JSON-LD Structured Data -->
+  <!-- JSON-LD -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "Person",
     "name": "Eric Alfonce",
     "url": "https://ericalfonce-portfolio.vercel.app",
-    "image": "https://ericalfonce-portfolio.vercel.app/AVATAR.jpg",
-    "jobTitle": "Cybersecurity Specialist & Software Developer",
-    "description": "Cybersecurity specialist, software developer and creative technologist working across web application security, Python and PHP software, networking, IoT hardware and EdTech systems.",
-    "address": { "@type": "PostalAddress", "addressCountry": "TZ" },
+    "jobTitle": "Cybersecurity Specialist and Software Developer",
+    "description": "Cybersecurity specialist and software developer in Arusha, Tanzania. Builds tools that keep East African businesses secure — web vulnerability scanning, fintech and payment integrations.",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Arusha",
+      "addressCountry": "TZ"
+    },
+    "worksFor": {
+      "@type": "Organization",
+      "name": "IklwaLabs",
+      "url": "https://iklwalabs.co.tz"
+    },
     "knowsAbout": [
       "Cybersecurity",
-      "Penetration Testing",
       "Web Application Security",
-      "Network Security",
-      "Software Development",
+      "Vulnerability Assessment",
+      "Digital Forensics",
       "Python",
-      "FastAPI",
-      "JavaScript",
-      "PHP",
+      "Flask",
+      "Django",
+      "PostgreSQL",
       "Linux",
-      "IoT",
-      "ESP32",
-      "EdTech"
+      "Nginx"
     ],
     "sameAs": [
       "https://github.com/ericalfonce",
-      "https://www.linkedin.com/in/eric-alfonce",
+      "https://www.linkedin.com/in/ericalfonce",
       "https://www.instagram.com/ericalfonce"
     ]
   }
   </script>
 
-  <!-- Favicons — pixelated in-browser from the avatar at runtime -->
-  <link rel="icon"             id="favicon"    type="image/png" href="favicon.png"    sizes="32x32" />
-  <link rel="icon"             id="favicon-96" type="image/png" href="favicon-96.png" sizes="96x96" />
-  <link rel="apple-touch-icon"                 type="image/png" href="favicon-96.png" />
+  <!-- Favicons -->
+  <link rel="icon"             type="image/png" href="/img/mulikascans-favicon-192.png" sizes="192x192" />
+  <link rel="apple-touch-icon" type="image/png" href="/img/mulikascans-favicon-192.png" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="style.css" />
+  <!-- Two families only: Inter Tight for text, JetBrains Mono for the terminal. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="/style.css" />
 
   <!-- Without JS the boot overlay would trap the visitor forever. -->
   <noscript>
     <style>
       #boot-screen { display: none !important; }
-      .hero__line-in, .hero__roles, .hero__statement, .hero__meta,
-      .hero__scroll, .hero__visual, [data-reveal] {
-        opacity: 1 !important; transform: none !important;
-      }
+      html { opacity: 1 !important; }
     </style>
   </noscript>
 </head>
 <body>
-
-  <div id="cursor-dot" aria-hidden="true"></div>
-  <div id="cursor-ring" aria-hidden="true"></div>
-  <div id="cursor-label" aria-hidden="true"></div>
 
   <!-- ══════════════ Boot Sequence Overlay ══════════════ -->
   <div id="boot-screen" role="status" aria-live="polite">
@@ -104,32 +96,27 @@
  █████╗  ██████╔╝██║██║
  ██╔══╝  ██╔══██╗██║██║
  ███████╗██║  ██║██║╚██████╗
- ╚══════╝╚═╝  ╚═╝╚═╝ ╚═════╝ v2.0</pre>
+ ╚══════╝╚═╝  ╚═╝╚═╝ ╚═════╝</pre>
       <div id="boot-log"></div>
       <div class="boot-final">
         <span class="boot-cursor" aria-hidden="true"></span>
-        <span class="boot-skip-hint">press any key to skip</span>
+        <span>press any key to skip</span>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════ Background Layers ══════════════ -->
-  <div class="bg-layer" aria-hidden="true"></div>
-  <canvas id="matrix-canvas" aria-hidden="true"></canvas>
-  <canvas id="grain-canvas" aria-hidden="true"></canvas>
-
-  <a class="skip-link" href="#work">Skip to selected work</a>
+  <a class="skip-link" href="#work">Skip to work</a>
 
   <!-- ══════════════ Navigation ══════════════ -->
-  <header class="nav" data-nav>
+  <header class="nav">
     <div class="nav__inner">
       <a class="nav__brand" href="/">ERIC ALFONCE</a>
 
       <nav class="nav__links" aria-label="Primary">
-        <a href="/#work" data-nav-link>Work</a>
-        <a href="/#about" data-nav-link>About</a>
-            <a href="/#terminal-section" data-nav-link>Terminal</a>
-        <a href="/#contact" data-nav-link>Contact</a>
+        <a href="/#work">Work</a>
+        <a href="/#about">About</a>
+        <a href="/#terminal-section">Terminal</a>
+        <a href="/#contact">Contact</a>
       </nav>
 
       <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="mobile-menu">
@@ -141,15 +128,14 @@
 
   <div class="mobile-menu" id="mobile-menu" hidden>
     <nav class="mobile-menu__links" aria-label="Mobile">
-      <a href="/#work"><span>01</span> Work</a>
-      <a href="/#capabilities"><span>02</span> Capabilities</a>
-      <a href="/#about"><span>03</span> About</a>
-            <a href="/#terminal-section"><span>04</span> Terminal</a>
-      <a href="/#contact"><span>05</span> Contact</a>
+      <a href="/#work">Work</a>
+      <a href="/#about">About</a>
+      <a href="/#terminal-section">Terminal</a>
+      <a href="/#contact">Contact</a>
     </nav>
     <div class="mobile-menu__foot">
       <a href="https://github.com/ericalfonce" data-native target="_blank" rel="noopener">GitHub</a>
-      <a href="https://www.linkedin.com/in/eric-alfonce" data-native target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://www.linkedin.com/in/ericalfonce" data-native target="_blank" rel="noopener">LinkedIn</a>
       <a href="mailto:ericgasperalfonce@gmail.com" data-native>Email</a>
     </div>
   </div>
@@ -160,159 +146,35 @@
     <!-- ──────────── HOME ──────────── -->
     <div class="view view--home" data-view="home">
 
-      <!-- Hero -->
+      <!-- Hero: name, discipline, location. Nothing else. -->
       <section class="hero" aria-labelledby="hero-name">
-        <div class="hero__visual" data-parallax="0.22" aria-hidden="true" data-hero-visual></div>
-
-        <div class="hero__inner">
-          <h1 class="hero__name" id="hero-name" data-route-heading>
-            <span class="hero__line"><span class="hero__line-in" data-hero="1">ERIC</span></span>
-            <span class="hero__line"><span class="hero__line-in" data-hero="2">ALFONCE</span></span>
-          </h1>
-
-          <p class="hero__roles" data-hero="3">
-            <span>Cybersecurity</span>
-            <span aria-hidden="true">/</span>
-            <span>Software</span>
-            <span aria-hidden="true">/</span>
-            <span>Creative Technology</span>
-          </p>
-
-          <p class="hero__statement" data-hero="4">
-            Building secure digital products, systems and technology-driven experiences.
-          </p>
-
-          <div class="hero__meta" data-hero="5">
-            <span>Tanzania</span>
-            <span class="hero__meta-dot" aria-hidden="true"></span>
-            <span>12 open-source projects</span>
-          </div>
+        <div>
+          <h1 class="hero__name" id="hero-name" data-route-heading>ERIC ALFONCE</h1>
+          <p class="hero__roles">Cybersecurity &amp; Software</p>
+          <p class="hero__location">Tanzania</p>
         </div>
-
-        <a class="hero__scroll" href="#intro">
-          <span>Scroll to explore</span>
-          <svg width="10" height="34" viewBox="0 0 10 34" fill="none" aria-hidden="true">
-            <path d="M5 0v32M1 28l4 4 4-4" stroke="currentColor" stroke-width="1"/>
-          </svg>
-        </a>
       </section>
 
-      <!-- Intro statement -->
-      <section class="intro section" id="intro" aria-labelledby="intro-heading">
-        <div class="section__head" data-reveal>
-          <span class="section__index">01</span>
-          <span class="section__label">Introduction</span>
-        </div>
-
-        <h2 class="intro__statement" id="intro-heading">
-          <span class="line"><span class="line__in" data-reveal>I build secure</span></span>
-          <span class="line"><span class="line__in" data-reveal>digital systems</span></span>
-          <span class="line"><span class="line__in" data-reveal>and experiences.</span></span>
-        </h2>
-
-        <p class="intro__body" data-reveal>
-          My work combines cybersecurity, software engineering, web technologies, networking and
-          experimental digital products — built to be used, not just demonstrated.
-        </p>
-      </section>
-
-      <!-- Selected Work (generated from data/projects) -->
+      <!-- MulikaScans: the primary project (built from data.js) -->
       <section class="work section" id="work" aria-labelledby="work-heading">
-        <div class="section__head" data-reveal>
-          <span class="section__index">02</span>
-          <span class="section__label">Selected work</span>
-        </div>
-
-        <h2 class="section__title" id="work-heading" data-route-heading>
-          <span class="line"><span class="line__in" data-reveal>Selected</span></span>
-          <span class="line"><span class="line__in" data-reveal>Work</span></span>
-        </h2>
-
-        <div class="work__list" data-work-list></div>
-
-        <div class="work__index" data-reveal>
-          <h3 class="work__index-title">Full index</h3>
-          <ol class="work__index-list" data-work-index></ol>
-        </div>
+        <h2 class="sr-only" id="work-heading">Work</h2>
+        <div class="feature" data-feature></div>
+        <div data-work-index></div>
       </section>
 
-      <!-- Capabilities -->
-      <section class="caps section" id="capabilities" aria-labelledby="caps-heading">
-        <div class="section__head" data-reveal>
-          <span class="section__index">03</span>
-          <span class="section__label">Capabilities</span>
-        </div>
-
-        <h2 class="section__title" id="caps-heading" data-route-heading>
-          <span class="line"><span class="line__in" data-reveal>What I work</span></span>
-          <span class="line"><span class="line__in" data-reveal>with</span></span>
-        </h2>
-
-        <div class="caps__grid" data-caps-grid></div>
-      </section>
-
-      <!-- About preview -->
+      <!-- About -->
       <section class="about section" id="about" aria-labelledby="about-heading">
-        <div class="about__grid">
-          <div class="about__lead">
-            <div class="section__head" data-reveal>
-              <span class="section__index">04</span>
-              <span class="section__label">About</span>
-            </div>
-            <h2 class="section__title" id="about-heading" data-route-heading>
-              <span class="line"><span class="line__in" data-reveal>About</span></span>
-            </h2>
-          </div>
-
-          <div class="about__body">
-            <p class="about__text" data-reveal>
-              Eric Alfonce works across cybersecurity, software development, networking and digital
-              product development.
-            </p>
-            <p class="about__text about__text--muted" data-reveal>
-              He builds security tooling that finds real weaknesses in web applications, and the
-              software and infrastructure those findings depend on. Most work lives in Python,
-              JavaScript and Linux, deployed on real servers.
-            </p>
-            <div class="about__actions" data-reveal>
-              <a class="btn btn--ghost" href="#terminal-section" data-about-eric>
-                <span>About Eric</span>
-                <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true">
-                  <path d="M9 1l4 4-4 4M13 5H1" stroke="currentColor" stroke-width="1.2"/>
-                </svg>
-              </a>
-              <a class="btn btn--text" href="https://github.com/ericalfonce" data-native target="_blank" rel="noopener">
-                <span>GitHub</span>
-                <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-                  <path d="M3 1h5v5M8 1L1 8M1 5v5h5" stroke="currentColor" stroke-width="1.2"/>
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
+        <h2 class="section__title" id="about-heading" data-route-heading>About</h2>
+        <div class="about__body" data-about-body></div>
+        <div class="about__skills" data-about-skills></div>
       </section>
 
       <!-- Interactive Terminal -->
       <section class="term section" id="terminal-section" aria-labelledby="term-heading">
-        <div class="term__intro">
-          <div class="section__head" data-reveal>
-            <span class="section__index">05</span>
-            <span class="section__label">Interactive</span>
-          </div>
+        <h2 class="section__title" id="term-heading" data-route-heading>Terminal</h2>
+        <p class="term__blurb">Type <code>/help</code> and press enter.</p>
 
-          <h2 class="term__headline" id="term-heading" data-route-heading>
-            <span class="line"><span class="line__in" data-reveal>Want the</span></span>
-            <span class="line"><span class="line__in" data-reveal>nerdy version?</span></span>
-          </h2>
-
-          <p class="term__blurb" data-reveal>
-            Everything on this page, plus commands that only exist here. Type
-            <code>/help</code> and press enter.
-          </p>
-        </div>
-
-        <div class="term__stage" data-reveal>
-          <!-- ── Terminal (existing interactive system) ── -->
+        <div>
           <div class="terminal-wrapper" id="terminal-wrapper">
             <div class="terminal-window" id="terminal" role="region" aria-label="Interactive terminal">
 
@@ -322,7 +184,7 @@
                   <button class="ctrl ctrl-min"   id="btn-min"    type="button" title="Minimize" aria-label="Minimize terminal"></button>
                   <button class="ctrl ctrl-max"   id="btn-max"    type="button" title="Maximize" aria-label="Maximize terminal"></button>
                 </div>
-                <div class="titlebar-title" id="titlebar-title">eric@portfolio: ~</div>
+                <div class="titlebar-title" id="titlebar-title">eric@portfolio:~$</div>
                 <div class="titlebar-spacer" aria-hidden="true"></div>
               </div>
 
@@ -343,7 +205,7 @@
                     aria-autocomplete="list"
                     aria-expanded="false"
                     aria-controls="autocomplete"
-                    placeholder="type a command or press Tab..."
+                    placeholder="type /help"
                   />
                   <div class="autocomplete-dropdown" id="autocomplete" role="listbox" aria-label="Command suggestions"></div>
                 </div>
@@ -352,50 +214,12 @@
             </div>
           </div>
         </div>
-
-        <ul class="term__chips" data-reveal aria-label="Example commands">
-          <li><button type="button" data-term-cmd="/help">/help</button></li>
-          <li><button type="button" data-term-cmd="/projects">/projects</button></li>
-          <li><button type="button" data-term-cmd="/security">/security</button></li>
-          <li><button type="button" data-term-cmd="/skills">/skills</button></li>
-          <li><button type="button" data-term-cmd="/contact">/contact</button></li>
-          <li><button type="button" data-term-cmd="/clear">/clear</button></li>
-        </ul>
       </section>
 
-      <!-- Contact CTA -->
-      <section class="cta section" id="contact" aria-labelledby="cta-heading">
-        <div class="cta__inner">
-          <div class="section__head" data-reveal>
-            <span class="section__index">06</span>
-            <span class="section__label">Contact</span>
-          </div>
-
-          <h2 class="cta__headline" id="cta-heading" data-route-heading>
-            <span class="line"><span class="line__in" data-reveal>Let's build</span></span>
-            <span class="line"><span class="line__in" data-reveal>something</span></span>
-            <span class="line"><span class="line__in" data-reveal>secure.</span></span>
-          </h2>
-
-          <ul class="cta__links" data-reveal>
-            <li>
-              <span class="cta__link-label">Email</span>
-              <a class="cta__link" href="mailto:ericgasperalfonce@gmail.com" data-native>ericgasperalfonce@gmail.com</a>
-            </li>
-            <li>
-              <span class="cta__link-label">LinkedIn</span>
-              <a class="cta__link" href="https://www.linkedin.com/in/eric-alfonce" data-native target="_blank" rel="noopener">in/eric-alfonce</a>
-            </li>
-            <li>
-              <span class="cta__link-label">GitHub</span>
-              <a class="cta__link" href="https://github.com/ericalfonce" data-native target="_blank" rel="noopener">github.com/ericalfonce</a>
-            </li>
-            <li>
-              <span class="cta__link-label">Location</span>
-              <span class="cta__link cta__link--static">Tanzania</span>
-            </li>
-          </ul>
-        </div>
+      <!-- Contact -->
+      <section class="contact section" id="contact" aria-labelledby="contact-heading">
+        <h2 class="section__title" id="contact-heading" data-route-heading>Contact</h2>
+        <ul class="contact__links" data-contact-links></ul>
       </section>
 
     </div><!-- /.view--home -->
@@ -406,39 +230,16 @@
   </main>
 
   <!-- ══════════════ Footer ══════════════ -->
-  <footer class="footer" data-marquee>
-    <div class="footer__marquee" aria-hidden="true">
-      <div class="footer__track" data-marquee-track>
-        <span>Cybersecurity</span><i>•</i><span>Software</span><i>•</i><span>Technology</span><i>•</i><span>Security</span><i>•</i><span>Development</span><i>•</i>
-        <span>Cybersecurity</span><i>•</i><span>Software</span><i>•</i><span>Technology</span><i>•</i><span>Security</span><i>•</i><span>Development</span><i>•</i>
-      </div>
-    </div>
-
-    <div class="footer__main">
-      <div class="footer__id">
-        <p class="footer__name">Eric Alfonce</p>
-        <p class="footer__role">Cybersecurity &amp; Software</p>
-      </div>
-
-      <nav class="footer__social" aria-label="Social">
-        <a href="https://github.com/ericalfonce" data-native target="_blank" rel="noopener">GitHub</a>
-        <a href="https://www.linkedin.com/in/eric-alfonce" data-native target="_blank" rel="noopener">LinkedIn</a>
-        <a href="https://www.instagram.com/ericalfonce" data-native target="_blank" rel="noopener">Instagram</a>
-        <a href="mailto:ericgasperalfonce@gmail.com" data-native>Email</a>
-      </nav>
-
-      <div class="footer__end">
-        <p class="footer__copy">© <span data-year>2026</span> Eric Alfonce</p>
-        <a class="footer__top" href="#top" data-back-to-top>Back to top ↑</a>
-      </div>
-    </div>
+  <footer class="footer">
+    <p class="footer__name">Eric Alfonce</p>
+    <p>© <span data-year>2026</span></p>
   </footer>
 
   <!-- ══════════════ Exit Confirmation Modal ══════════════ -->
   <div id="exit-modal" role="dialog" aria-modal="true" aria-labelledby="exit-modal-title" hidden>
     <div class="modal-box">
       <p class="modal-title" id="exit-modal-title">Close terminal?</p>
-      <p class="modal-desc">This session ends and the output is cleared.</p>
+      <p class="modal-desc">The output will be cleared.</p>
       <div class="modal-btns">
         <button id="exit-cancel" class="btn-cancel" type="button">Cancel</button>
         <button id="exit-confirm" class="btn-danger" type="button">Close</button>

@@ -2,562 +2,372 @@
    Shared content data — single source of truth.
 
    Consumed by:
-     · terminal.js   (classic command palette: name / desc / tags / url)
-     · site/home.js  (cinematic homepage sections)
-     · site/project.js (case study pages)
-     · site/art.js   (deterministic generative project visuals)
+     · terminal.js      (command palette)
+     · site/home.js     (homepage)
+     · site/project.js  (case study pages)
 
    ── EDITING NOTES ──────────────────────────────────────────────
-   · Every project below is a REAL public repository on
-     https://github.com/ericalfonce — do not add projects that do
-     not exist there.
-   · `year` is intentionally null where no verified date is known.
-     Fill it in and the year chip renders automatically; leave it
-     null and the chip is simply omitted (no broken UI).
-   · `technologies` is derived from the original `tags` field, which
-     is pre-existing verified data. Add a new tag only if you have
-     actually used it in the repo.
-    · No metrics, clients, users, revenue or awards are stored here —
-      none have been verified, and none should be invented.
-    · There is deliberately no `status` and no `role` field. Repo
-      activity and ownership are not verifiable from what we have, so
-      the case-study page omits those rows rather than guessing.
-      Availability is not claimed anywhere on the site.
+   · Every project below is REAL and was verified against either the
+     public GitHub API, the project's own live site, or the source
+     README on disk. Do not add projects that cannot be verified.
+
+   · `url` is the real public destination. It is `null` for private or
+     unreleased work (Network Billing System, TunuPay, ScholarReport)
+     — those render as plain text rows with no link, which is honest.
+     Do not invent a repo URL to fill the gap.
+
+   · `year` is the verified start year (GitHub `created_at`, or the
+     project's own documentation). It is `null` where no date is known
+     and the row simply omits it.
+
+   · `mark` is a real brand asset filename in /public/img. It is
+     `null` for most projects, because no real logo exists for them
+     and a generated placeholder would be a lie.
+
+   · There are deliberately NO metrics, users, revenue, awards,
+     certification statuses or client counts anywhere in this file.
+     None of that has been verified, so none of it is claimed.
    ================================================================ */
 
 /* ── Person ──────────────────────────────────────────────────── */
 export const PROFILE = {
-  name:      'Eric Alfonce',
-  first:     'ERIC',
-  last:     'ALFONCE',
-  role:      'Cybersecurity Specialist & Software Developer',
-  location:  'Tanzania',
+  name:     'Eric Alfonce',
+  role:     'Cybersecurity & Software',
+  location: 'Arusha, Tanzania',
 
+  /* Short, factual bio. Sources: the public GitHub profile and the
+     IklwaLabs site. No aspirations, no adjectives. */
+  about: [
+    'I build tools that keep East African businesses secure. My focus is web ' +
+    'vulnerability scanning, East African fintech, and payment integrations.',
 
-  /* Short positioning lines — used under the hero lockup. */
-  disciplines: ['Cybersecurity', 'Software', 'Creative Technology'],
-  statement:
-    'Building secure digital products, systems and technology-driven experiences.',
+    'Most of my work is Python and JavaScript on Linux servers — Flask and ' +
+    'Django backends, PostgreSQL, Nginx, and the networking underneath them. ' +
+    'Through IklwaLabs I do cybersecurity and IT work for African SMEs.',
 
-  /* Three-to-four sentence intro. Kept short on purpose. */
-  about:
-    'Eric Alfonce works across cybersecurity, software development, networking and ' +
-    'digital product development. He builds security tooling that finds real weaknesses ' +
-    'in web applications, and the software and infrastructure those findings depend on. ' +
-    'Most work lives in Python, JavaScript and Linux, deployed on real servers.',
+    'The rest is smaller tools built to solve a specific problem: a lab logbook ' +
+    'for a computer lab, a hotspot billing backend for a network operator, a ' +
+    'text detector released as open source.',
+  ],
 
-  /* Verified public profiles. Do not add handles that do not exist. */
+  /* Every link below was checked and returns a live profile.
+     `linkedin` uses the handle from the LinkedIn badge in the public
+     GitHub profile README, which is authoritative for this account. */
   github:    'https://github.com/ericalfonce',
-  linkedin:  'https://www.linkedin.com/in/eric-alfonce',
+  linkedin:  'https://www.linkedin.com/in/ericalfonce',
   instagram: 'https://www.instagram.com/ericalfonce',
   email:     'ericgasperalfonce@gmail.com',
-};
-
-/* Maps a project tag to a human-readable technology label. */
-const TECH_LABELS = {
-  python: 'Python', security: 'Security', cyber: 'Cybersecurity', html: 'HTML',
-  css: 'CSS', js: 'JavaScript', php: 'PHP', esp32: 'ESP32', hardware: 'Hardware',
-  rf: 'RF Research', cloud: 'Cloud', iot: 'IoT',
+  company:   'https://iklwalabs.co.tz',
 };
 
 /* ================================================================
    PROJECTS
    ---------------------------------------------------------------
-   `number`    stable display index (01 … 12)
    `slug`      URL segment → /work/<slug>
-   `category`  short discipline line for the case-study hero
-   `problem`   what gap the project addresses (derived from the
-               real repo description — no invented history)
-   `approach`  how it is built (same constraint)
-   `features`  only capabilities already stated in the repo
+   `category`  short discipline line
+   `summary`   one factual sentence — the list row
+   `body`      two or three factual paragraphs — the case study
+   `stack`     languages / infrastructure actually used
+   `url`       real public destination, or null
+   `mark`      real brand asset in /public/img, or null
+   `featured`  true only for MulikaScans, the primary project
    ================================================================ */
 export const PROJECTS = [
   {
-    number: 1,
-    slug: 'web-vulnerability-scanner',
-    name: 'Web Vulnerability Scanner',
-    title: 'Web Vulnerability Scanner',
-    repo: 'web-vuln-scanner',
-    category: 'Cybersecurity / Web Security',
-    year: null,
-    shortDescription:
-      'A Python scanner that probes web applications for the vulnerability classes that actually get exploited.',
-    description:
-      'A command-line security tool that scans live web applications for common, well-documented ' +
-      'weaknesses. It walks the target, collects injectable parameters, then tests each one against ' +
-      'a set of safe, non-destructive payloads to classify the response as vulnerable or not. ' +
-      'Built as a practical learning and research tool for understanding how web attacks actually work.',
-    problem:
-      'Most small web applications ship without anyone testing them properly. A generic scanner that ' +
-      'only prints raw HTTP noise makes it hard to tell "something responded oddly" from "this input ' +
-      'is reflected unsafely".',
-    approach:
-      'Each vulnerability class is a small, isolated test module. A test sends a marked payload, then ' +
-      'compares the response body and status against a clean baseline request to the same endpoint — ' +
-      'so a match means the input reached an interpreter, not merely that the page is large.',
-    features: [
-      'SQL injection detection',
-      'Cross-site scripting (XSS) detection',
-      'Open redirect detection',
-      'Non-destructive probing only',
-      'Per-endpoint result reporting',
-    ],
-    tags: ['python', 'security', 'cyber'],
-    url: 'https://github.com/ericalfonce/web-vuln-scanner',
+    slug: 'mulikascans',
+    name: 'MulikaScans',
+    category: 'Cybersecurity',
+    year: 2026,
     featured: true,
+    mark: 'mulikascans-logo.png',
+    url: 'https://mulikascans.com',
+    repo: null,
+    summary:
+      'Web vulnerability scanning SaaS for East African SMEs, detecting SQL injection, ' +
+      'XSS, broken authentication and 200+ vulnerability types.',
+    body: [
+      'MulikaScans is a web application vulnerability scanner built as a hosted service. ' +
+      'A user submits a URL and a scan type; the platform walks the target, runs the ' +
+      'relevant detection modules, and returns a report grouped by severity.',
+      'Findings carry a CVSS score, the OWASP category and the CWE identifier, alongside ' +
+      'the evidence that produced them and the remediation for each. The live site ' +
+      'advertises coverage of 200+ vulnerability types, and the codebase carries 28 ' +
+      'active scanner modules.',
+
+      'Detection is not limited to request/response probing. There is an out-of-band ' +
+      'component for blind vulnerabilities, a Playwright-based DOM scanner for ' +
+      'client-side and stored XSS, and a static analysis path that accepts a ZIP archive ' +
+      'or a GitHub URL. A proof-of-concept validator checks exploit payloads against ' +
+      'signed authorisation tokens and keeps an audit trail.',
+
+      'It runs as a Python/Flask application on PostgreSQL behind Gunicorn and Nginx on ' +
+      'an Ubuntu VPS, and is built for this market: PesaPal and Flutterwave payments, ' +
+      'Google OAuth with TOTP two-factor, four subscription plans, PDF report export ' +
+      'and scheduled recurring scans.',
+    ],
+    stack: ['Python', 'Flask', 'PostgreSQL', 'Gunicorn', 'Nginx', 'Playwright', 'PesaPal', 'Flutterwave'],
   },
   {
-    number: 2,
-    slug: 'imei-guard',
-    name: 'IMEI Guard',
-    title: 'IMEI Guard',
-    repo: 'imei-guard',
-    category: 'Cybersecurity / Anti-Theft Systems',
-    year: null,
-    shortDescription:
-      'A FastAPI service for reporting stolen devices and checking an IMEI against a stolen-device registry.',
-    description:
-      'A regional registry for stolen mobile devices, built for East Africa. Owners report a lost or ' +
-      'stolen phone by its IMEI, and anyone can then check whether a handset in their hand has been ' +
-      'reported. The backend is a FastAPI application serving a JSON API, designed to be the shared ' +
-      'reference that carrier shops, police desks and second-hand vendors can all query.',
-    problem:
-      'A stolen phone keeps working, and a buyer has no cheap way to find out. IMEI is the one ' +
-      'identifier that survives a factory reset, so it is the natural key for a shared blacklist — ' +
-      'but the record has to be reachable instantly, from a phone, with no account required.',
-    approach:
-      'IMEI is normalised and validated server-side before it is ever stored, then exposed as a ' +
-      'lookup endpoint returning a plain found / not-found verdict. FastAPI gives typed request ' +
-      'models and generated docs, so the public API stays self-describing as it grows.',
-    features: [
-      'IMEI report submission',
-      'Public stolen-device lookup endpoint',
-      'Server-side IMEI validation',
-      'Automatically generated OpenAPI documentation',
-    ],
-    tags: ['python', 'security'],
-    url: 'https://github.com/ericalfonce/imei-guard',
-    featured: true,
-  },
-  {
-    number: 3,
-    slug: 'webscanner',
-    name: 'Webscanner',
-    title: 'Webscanner',
-    repo: 'webscanner',
-    category: 'Cybersecurity / Web Security',
-    year: null,
-    shortDescription:
-      'A browser-based front end that turns raw scanner output into something a non-specialist can act on.',
-    description:
-      'A web interface layer for running and reading web vulnerability scans. The detection work ' +
-      'lives in the backend scanner; this project is the human side of it — a browser UI that accepts ' +
-      'a target, presents the findings, and separates "needs attention now" from "worth knowing about".',
-    problem:
-      'Scanner output is written for people who already know the field. A site owner needs a ' +
-      'severity ranking and plain language, not raw payloads and stack traces.',
-    approach:
-      'The interface treats severity as a first-class visual property — ordering and colour come ' +
-      'from the finding class, not from decoration — so the highest-risk item is the first thing ' +
-      'on screen without reading anything.',
-    features: [
-      'Browser-based scanning interface',
-      'Severity-ranked findings',
-      'Scan target submission',
-      'Plain-language finding summaries',
-    ],
-    tags: ['html', 'security'],
-    url: 'https://github.com/ericalfonce/webscanner',
-    featured: true,
-  },
-  {
-    number: 4,
-    slug: 'bluetooth-jammer-esp32',
-    name: 'Bluetooth Jammer (ESP32)',
-    title: 'Bluetooth Jammer (ESP32)',
-    repo: 'Bluetooth-jammer-esp32',
-    category: 'Hardware Security / RF Research',
-    year: null,
-    shortDescription:
-      'ESP32 and nRF24L01 hardware research into 2.4GHz interference and RF signal behaviour.',
-    description:
-      'A hardware security research project studying the 2.4GHz band. An ESP32 drives an nRF24L01 ' +
-      'radio to transmit wideband interference while capturing how nearby Bluetooth devices respond — ' +
-      'what a crowded band does to a connection, and how much energy it takes to disrupt one. ' +
-      'Written for education: the goal is to understand RF behaviour, not to break anyone\'s kit.',
-    problem:
-      'RF interference is usually explained with theory diagrams. Understanding what a jammer actually ' +
-      'does to a live link requires building one and watching what changes.',
-    approach:
-      'Keep the transmit and receive paths separate and instrumented, so the same setup can drive ' +
-      'the radio and observe the consequence. Everything runs on a €10 ESP32, which keeps the ' +
-      'experiment repeatable for anyone who wants to try it.',
-    features: [
-      'ESP32 + nRF24L01 2.4GHz transmission',
-      'RF signal behaviour analysis',
-      'Bluetooth link disruption observation',
-      'Open, documented hardware research',
-    ],
-    tags: ['esp32', 'hardware', 'rf', 'security'],
-    url: 'https://github.com/ericalfonce/Bluetooth-jammer-esp32',
-    featured: true,
-  },
-  {
-    number: 5,
-    slug: 'agrimarket',
-    name: 'AgriMarket',
-    title: 'AgriMarket',
-    repo: 'agrimarket',
-    category: 'Software / Agriculture',
-    year: null,
-    shortDescription:
-      'A Python marketplace connecting farmers directly with buyers so fresh produce moves without the middleman.',
-    description:
-      'An agricultural marketplace that connects smallholder farmers with buyers, built in Python. ' +
-      'Produce is listed by the farmer and visible to buyers, removing the chain of intermediaries ' +
-      'that normally takes a large share of the value of a harvest before it reaches a table.',
-    problem:
-      'Smallholder farmers have produce and no direct route to a buyer. Every intermediary layer ' +
-      'takes a cut, and the farmer has no way to see what the market is actually paying.',
-    approach:
-      'A simple Python application handling the two sides of the market — listing and discovery — ' +
-      'so the farmer owns the listing and the buyer sees the real thing.',
-    features: [
-      'Farmer produce listings',
-      'Buyer-side product discovery',
-      'Python application backend',
-      'Direct farm-to-buyer connection',
-    ],
-    tags: ['python'],
-    url: 'https://github.com/ericalfonce/agrimarket',
-    featured: true,
-  },
-  {
-    number: 6,
-    slug: 'digi-attendance',
-    name: 'Digi Attendance',
-    title: 'Digi Attendance',
-    repo: 'digi-attendance',
-    category: 'Software / EdTech',
-    year: null,
-    shortDescription:
-      'Digital attendance tracking for schools — a step toward paperless, auditable EdTech infrastructure.',
-    description:
-      'A digital attendance system for schools. Register is taken electronically instead of on a ' +
-      'paper roll, which removes the transcription errors that paper attendance guarantees and gives ' +
-      'schools a record they can actually query later.',
-    problem:
-      'Paper registers are slow, easy to lose, and impossible to audit once the term is over. Schools ' +
-      'want attendance data they can query, not a stack of books.',
-    approach:
-      'Start with the one interaction that happens every single day and make it fast and reliable. ' +
-      'Everything else — reporting, export — can be layered onto a register that is already correct.',
-    features: [
-      'Digital daily register',
-      'Per-student attendance history',
-      'Paperless record keeping',
-      'School-standard workflow',
-    ],
-    tags: ['html', 'js'],
-    url: 'https://github.com/ericalfonce/digi-attendance',
-    featured: true,
-  },
-  {
-    number: 7,
-    slug: 'school-system',
-    name: 'School System',
-    title: 'School System',
-    repo: 'school-system',
-    category: 'Software / Management Systems',
-    year: null,
-    shortDescription:
-      'A PHP school management system covering student records, grades, classes and administration.',
-    description:
-      'A full school management system in PHP. It holds student records, grade and class ' +
-      'assignments, and the administrative workflows around them — the day-to-day operations a ' +
-      'school office runs on rather than a single-purpose tool.',
-    problem:
-      'A school office runs on several disconnected registers. Nothing reconciles, and answering ' +
-      '"where is this student\'s record" takes longer than it should.',
-    approach:
-      'Model the school once — students, classes, grades — and let the registers become views over ' +
-      'that model instead of separate books that disagree with each other.',
-    features: [
-      'Student record management',
-      'Grade and class assignment',
-      'Administrative workflows',
-      'PHP application backend',
-    ],
-    tags: ['php', 'html'],
-    url: 'https://github.com/ericalfonce/school-system',
+    slug: 'iklwalabs',
+    name: 'IklwaLabs',
+    category: 'Cybersecurity / IT',
+    year: 2026,
     featured: false,
-  },
-  {
-    number: 8,
-    slug: 'cloud-architecture-diagrams',
-    name: 'Cloud Architecture Diagrams',
-    title: 'Cloud Architecture Diagrams',
-    repo: 'diagrams',
-    category: 'Infrastructure / Cloud',
-    year: null,
-    shortDescription:
-      'Diagram-as-code: cloud architectures kept in version control and reviewed like code.',
-    description:
-      'A diagram-as-code project for prototyping and documenting cloud system architectures. ' +
-      'Because the diagrams are text files in a repository, an architecture change shows up in a ' +
-      'pull request with a diff, instead of being redrawn in a design tool and lost in a folder.',
-    problem:
-      'Diagrams drawn by hand drift from the systems they describe, and nobody notices until the ' +
-      'diagram is months out of date and actively misleading.',
-    approach:
-      'Store the architecture as code. It reviews, versions and diffs exactly like everything else, ' +
-      'so the diagram and the system change in the same commit.',
-    features: [
-      'Architecture definitions as source files',
-      'Version-controlled diagrams',
-      'Rapid architecture prototyping',
-      'Reviewable infrastructure changes',
+    mark: 'iklwalabs-logo.png',
+    url: 'https://iklwalabs.co.tz',
+    repo: 'https://github.com/ericalfonce/iklwalabs',
+    summary:
+      'Cybersecurity and IT solutions company in Arusha, Tanzania — web vulnerability ' +
+      'scanning, digital forensics, security training and IT infrastructure.',
+    body: [
+      'IklwaLabs is the company I build and work through, based in Arusha, Tanzania. ' +
+      'The public site describes it as a cybersecurity and IT solutions company ' +
+      'serving African SMEs.',
+      'The service lines listed are web vulnerability scanning, digital forensics, ' +
+      'security training, and IT infrastructure. MulikaScans is the scanning product ' +
+      'built on top of that practice.',
     ],
-    tags: ['cloud'],
-    url: 'https://github.com/ericalfonce/diagrams',
-    featured: false,
+    stack: ['TypeScript', 'Next.js', 'Cloud', 'Digital Forensics'],
   },
   {
-    number: 9,
+    slug: 'network-billing-system',
+    name: 'Network Billing System',
+    category: 'Networking / Billing',
+    year: null,
+    featured: false,
+    mark: null,
+    url: null,
+    repo: null,
+    summary:
+      'Multi-tenant hotspot billing backend that sells Wi-Fi packages and grants ' +
+      'entitlements a MikroTik + FreeRADIUS network can enforce.',
+    body: [
+      'A multi-tenant backend for businesses that sell hotspot Wi-Fi access. Businesses ' +
+      'register, define packages, and sell access to their own customers. Once Django ' +
+      'verifies a payment, an entitlement is created and written as a RADIUS ' +
+      'authorisation that the MikroTik network enforces as time, speed and data.',
+
+      'The stack is Python, Django, Django REST Framework, PostgreSQL, Redis and Celery, ' +
+      'with FreeRADIUS handling the network side. Entitlement creation is idempotent so ' +
+      'a retried payment callback cannot grant access twice.',
+
+      'Phase 1 — the backend foundation — is complete. Real payment providers, live ' +
+      'FreeRADIUS pairing and the captive portal are phase 2.',
+    ],
+    stack: ['Python', 'Django', 'DRF', 'PostgreSQL', 'Redis', 'Celery', 'FreeRADIUS', 'MikroTik'],
+  },
+  {
+    slug: 'lab-logbook',
+    name: 'Lab Logbook',
+    category: 'Software / Education',
+    year: 2026,
+    featured: false,
+    mark: null,
+    url: 'https://github.com/ericalfonce/lab-logbook',
+    repo: 'https://github.com/ericalfonce/lab-logbook',
+    summary:
+      'Computer laboratory usage logbook with check-in/check-out, a live status board, ' +
+      'history, reports and an admin panel. Runs entirely offline.',
+    body: [
+      'A logbook for a shared computer laboratory. Students check in and out, and the ' +
+      'system keeps the history, shows who is currently at each machine on a live ' +
+      'status board, and produces reports for whoever runs the lab.',
+      'It is a Flask application on SQLite and needs no internet connection, which ' +
+      'matters more than it sounds for a lab that sits behind a school network. ' +
+      'An admin panel handles users and configuration.',
+    ],
+    stack: ['Python', 'Flask', 'SQLite'],
+  },
+  {
+    slug: 'ai-text-detector-humanizer',
+    name: 'AI Text Detector & Humanizer',
+    category: 'Software / Open Source',
+    year: 2026,
+    featured: false,
+    mark: null,
+    url: 'https://github.com/ericalfonce/ai-detector-humanizer',
+    repo: 'https://github.com/ericalfonce/ai-detector-humanizer',
+    summary:
+      'Open-source AI-text detector and humanizer, shipped as a FastAPI backend, a web ' +
+      'app and a Chrome extension.',
+    body: [
+      'An open-source tool that scores text for AI-generated patterns and offers a ' +
+      'free humanizer to rewrite it. It ships as three pieces that share one backend: ' +
+      'a FastAPI service, a web single-page app, and a browser extension so the ' +
+      'check works inside whatever page you are already writing in.',
+    ],
+    stack: ['Python', 'FastAPI', 'JavaScript', 'Chrome Extension'],
+  },
+  {
+    slug: 'mikrotik-voucher-system',
+    name: 'MikroTik Voucher System',
+    category: 'Networking / Software',
+    year: 2026,
+    featured: false,
+    mark: null,
+    url: 'https://github.com/ericalfonce/mikrotik-voucher-system',
+    repo: 'https://github.com/ericalfonce/mikrotik-voucher-system',
+    summary:
+      'Management dashboard for MikroTik hotspot vouchers — generating, tracking and ' +
+      'reconciling prepaid access codes.',
+    body: [
+      'A dashboard for running prepaid hotspot access on MikroTik equipment. Vouchers ' +
+      'are generated, tracked and reconciled, which is the part operators get wrong ' +
+      'by hand once a code base grows past a page of paper.',
+      'Built in TypeScript.',
+    ],
+    stack: ['TypeScript', 'MikroTik'],
+  },
+  {
+    slug: 'pelekapro',
+    name: 'PelekaPro',
+    category: 'Client Work / E-commerce',
+    year: 2026,
+    featured: false,
+    mark: null,
+    url: 'https://pelekapro.vercel.app',
+    repo: 'https://github.com/ericalfonce/pelekapro',
+    summary:
+      'Phone accessories storefront for Arusha, Moshi, Dar es Salaam and Mwanza, with ' +
+      'M-Pesa, Tigo Pesa and Airtel Money checkout.',
+    body: [
+      'An online store for phone accessories — cases, chargers, power banks, earbuds ' +
+      'and smartwatches — delivering across Arusha, Moshi, Dar es Salaam and Mwanza.',
+      'The point of interest is the payment layer: checkout is built on M-Pesa, Tigo ' +
+      'Pesa and Airtel Money rather than card payments, because that is how the market ' +
+      'actually pays. Built with Next.js and TypeScript.',
+    ],
+    stack: ['Next.js', 'TypeScript', 'Mobile Money'],
+  },
+  {
+    slug: 'katembo-safari',
+    name: 'Katembo Safari',
+    category: 'Client Work / Travel',
+    year: 2026,
+    featured: false,
+    mark: null,
+    url: 'https://katembo-site.vercel.app',
+    repo: 'https://github.com/ericalfonce/katembo-site',
+    summary:
+      'Private, tailor-made safari operator covering Tanzania and East Africa, from ' +
+      'the Serengeti and Ngorongoro to the coast.',
+    body: [
+      'A site for a private, tailor-made safari operator. The trips are planned around ' +
+      'one traveller rather than sold from a fixed departure list, so the site leads ' +
+      'with destinations and the planning process instead of a booking calendar.',
+    ],
+    stack: ['HTML', 'CSS', 'JavaScript'],
+  },
+  {
     slug: 'lenga-safaris',
     name: 'Lenga Safaris',
-    title: 'Lenga Safaris',
-    repo: 'lenga-safaris',
-    category: 'Creative Technology / Web',
-    year: null,
-    shortDescription:
-      'A responsive travel and safari website for African wildlife experiences.',
-    description:
-      'A travel website for a safari operator, built as a responsive front end in HTML and CSS. ' +
-      'The imagery does the selling, so the layout is built around photography — full-bleed ' +
-      'landscape sections, generous type, and a structure that stays readable from a phone in a ' +
-      'vehicle with patchy signal.',
-    problem:
-      'A safari operator is selling a feeling through photographs. Stock-template layouts crop and ' +
-      'crowd exactly the images that matter.',
-    approach:
-      'Let the imagery define the grid. Type is set large and sparse so it never competes with the ' +
-      'photograph, and the whole page collapses cleanly on mobile.',
-    features: [
-      'Responsive HTML/CSS front end',
-      'Image-led layout',
-      'Wildlife and travel content',
-      'Mobile-first structure',
-    ],
-    tags: ['html', 'css'],
-    url: 'https://github.com/ericalfonce/lenga-safaris',
+    category: 'Client Work / Travel',
+    year: 2025,
     featured: false,
+    mark: null,
+    url: 'https://lenga-safaris.vercel.app',
+    repo: 'https://github.com/ericalfonce/lenga-safaris',
+    summary:
+      'Safari operator site covering Serengeti, Ngorongoro, Kilimanjaro and the ' +
+      'Wildebeest Migration.',
+    body: [
+      'A site for a Tanzanian safari operator, covering the Serengeti, Ngorongoro, ' +
+      'Kilimanjaro and the Wildebeest Migration, with wildlife, landscape and ' +
+      'culture content built around expert guiding.',
+    ],
+    stack: ['HTML', 'CSS'],
   },
   {
-    number: 10,
-    slug: 'kayandra-web',
-    name: 'Kayandra Web',
-    title: 'Kayandra Web',
-    repo: 'kayandra-web',
-    category: 'Creative Technology / Web',
+    slug: 'tunupay',
+    name: 'TunuPay',
+    category: 'Fintech',
     year: null,
-    shortDescription:
-      'A custom business website built around modern layout and polished typography.',
-    description:
-      'A custom business website with a modern responsive layout and considered typography. Built ' +
-      'as a bespoke design rather than a theme applied to a template — spacing, type scale and ' +
-      'hierarchy are set for this specific business.',
-    problem:
-      'Template sites look like template sites, and the type scale is rarely tuned to the content ' +
-      'that actually needs to be read.',
-    approach:
-      'Set the type scale first and let the layout follow from it, so the content decides the ' +
-      'hierarchy instead of a wireframe.',
-    features: [
-      'Custom responsive layout',
-      'Purpose-set typographic scale',
-      'Bespoke visual design',
-      'Production HTML and CSS',
-    ],
-    tags: ['html', 'css'],
-    url: 'https://github.com/ericalfonce/kayandra-web',
     featured: false,
+    mark: null,
+    url: null,
+    repo: null,
+    summary: 'Agri-finance savings platform — still in development.',
+    body: [
+      'A savings platform for agriculture, listed on my public profile as work in ' +
+      'progress. It is not released publicly yet.',
+    ],
+    stack: [],
   },
   {
-    number: 11,
-    slug: 'landing-page',
-    name: 'Landing Page',
-    title: 'Landing Page',
-    repo: 'landing-page',
-    category: 'Creative Technology / Web',
+    slug: 'scholarreport',
+    name: 'ScholarReport',
+    category: 'EdTech',
     year: null,
-    shortDescription:
-      'A mobile-first marketing landing page built with semantic HTML and CSS.',
-    description:
-      'A marketing landing page built with semantic HTML and CSS — no framework, no build step, ' +
-      'nothing between the markup and the browser. A deliberate exercise in doing a conversion page ' +
-      'properly with plain semantic markup.',
-    problem:
-      'A landing page is usually the easiest place to reach for a framework. The markup underneath is ' +
-      'rarely looked at again.',
-    approach:
-      'Write real semantic HTML with no dependencies, so the page is readable, fast, and ' +
-      'understandable by anyone who opens the source.',
-    features: [
-      'Semantic HTML structure',
-      'Mobile-first responsive CSS',
-      'Marketing page composition',
-      'Zero framework dependencies',
-    ],
-    tags: ['html', 'css'],
-    url: 'https://github.com/ericalfonce/landing-page',
     featured: false,
-  },
-  {
-    number: 12,
-    slug: 'web-dev-curriculum',
-    name: 'Web Dev Curriculum',
-    title: 'Web Dev Curriculum',
-    repo: 'Web-Dev-For-Beginners',
-    category: 'Education / Curriculum',
-    year: null,
-    shortDescription:
-      'A 24-lesson, 12-week web development curriculum covering HTML, CSS and JavaScript fundamentals.',
-    description:
-      'A structured web development curriculum: 24 lessons spread over 12 weeks, covering HTML, CSS ' +
-      'and JavaScript from first principles. The structure is paced deliberately — each week builds ' +
-      'on the last rather than jumping between topics.',
-    problem:
-      'Beginners lose momentum when a curriculum jumps between unrelated technologies. Progress ' +
-      'needs a shape you can feel.',
-    approach:
-      'Twenty-four lessons across twelve weeks, sequenced so each session has a single idea and a ' +
-      'finished result to show for it.',
-    features: [
-      '24 lessons across 12 weeks',
-      'HTML, CSS and JavaScript fundamentals',
-      'Sequenced weekly progression',
-      'Beginner-oriented material',
+    mark: null,
+    url: null,
+    repo: null,
+    summary: 'School results and reporting system — still in development.',
+    body: [
+      'A results and reporting system for schools, listed on my public profile as ' +
+      'work in progress. It is not released publicly yet.',
     ],
-    tags: ['html', 'css', 'js'],
-    url: 'https://github.com/ericalfonce/Web-Dev-For-Beginners',
-    featured: false,
+    stack: [],
   },
 ];
 
-/* Featured six drive the large Selected Work sections; the rest
-   render as a compact index below. */
 export const FEATURED_PROJECTS = PROJECTS.filter((p) => p.featured);
-export const OTHER_PROJECTS = PROJECTS.filter((p) => !p.featured);
+export const OTHER_PROJECTS   = PROJECTS.filter((p) => !p.featured);
 
 export const getProject = (slug) => PROJECTS.find((p) => p.slug === slug);
 
-/** Next project in the full list — powers the "next project" footer. */
+/** Next project in the list — powers the case-study footer link. */
 export const getNextProject = (slug) => {
   const i = PROJECTS.findIndex((p) => p.slug === slug);
   return i < 0 ? null : PROJECTS[(i + 1) % PROJECTS.length];
 };
 
-/** Human-readable technology labels for a project. */
-export const getTechnologies = (project) =>
-  project.tags.map((t) => TECH_LABELS[t] || t);
-
 /* ================================================================
-   SKILLS — grouped for the terminal palette. Percentages are the
-   pre-existing self-assessments; the homepage Capabilities section
-   deliberately shows no bars, only disciplines.
+   SKILLS — plain grouped text. No percentages, no bars, no badges.
+   Every entry is backed by shipped code or a documented capability.
    ================================================================ */
 export const SKILLS = {
-  'Cybersecurity  [PRIMARY]': [
-    { name: 'Web App Security',       pct: 85, color: '#fa4a6e' },
-    { name: 'Penetration Testing',    pct: 80, color: '#ff6b35' },
-    { name: 'Network Security',       pct: 75, color: '#fa4a6e' },
-    { name: 'Vulnerability Research', pct: 78, color: '#ff4466' },
-    { name: 'OSINT / Recon',         pct: 72, color: '#ff9500' },
-    { name: 'IoT / HW Security',     pct: 68, color: '#4afa9a' },
-    { name: 'CTF Challenges',        pct: 74, color: '#f5e27c' },
+  'Security': [
+    'Web application security',
+    'Vulnerability assessment',
+    'Digital forensics',
+    'OWASP Top 10',
+    'CVSS scoring',
+    'Out-of-band detection',
   ],
-  'Development': [
-    { name: 'HTML / CSS',            pct: 85, color: '#f5a27c' },
-    { name: 'Python',                pct: 78, color: '#4ae8fa' },
-    { name: 'JavaScript',            pct: 65, color: '#f5e27c' },
-    { name: 'PHP',                   pct: 60, color: '#b07cf5' },
-    { name: 'Bash / Shell',          pct: 70, color: '#4afa9a' },
+  'Backend': [
+    'Python',
+    'Flask',
+    'Django',
+    'FastAPI',
+    'PostgreSQL',
+    'Redis',
+    'Celery',
   ],
-  'Design': [
-    { name: 'Motion Graphics',       pct: 90, color: '#e87c9e' },
-    { name: 'UI / UX Design',        pct: 72, color: '#7c9af5' },
-    { name: 'Video Editing',         pct: 80, color: '#e87c9e' },
+  'Infrastructure': [
+    'Linux',
+    'Nginx',
+    'Gunicorn',
+    'VPS deployment',
+    'MikroTik',
+    'FreeRADIUS',
   ],
-  'Other': [
-    { name: 'EdTech Solutions',      pct: 78, color: '#4afa9a' },
-    { name: 'Cloud Architecture',    pct: 55, color: '#4ae8fa' },
-    { name: 'IoT / Hardware',        pct: 65, color: '#ff8c42' },
+  'Frontend': [
+    'JavaScript',
+    'TypeScript',
+    'Next.js',
+    'HTML',
+    'CSS',
+    'Bash',
   ],
 };
 
-/* ================================================================
-   CAPABILITIES — the homepage grid. Disciplines and tools only.
-   Derived from the terminal skill data above, no percentages.
-   ================================================================ */
-export const CAPABILITIES = [
-  {
-    id: 'security',
-    title: 'Security',
-    items: [
-      'Web Application Security',
-      'Vulnerability Assessment',
-      'Penetration Testing',
-      'Network Security',
-      'OSINT & Reconnaissance',
-    ],
-  },
-  {
-    id: 'software',
-    title: 'Software',
-    items: ['Python', 'FastAPI', 'PHP', 'JavaScript', 'HTML & CSS', 'Bash'],
-  },
-  {
-    id: 'infrastructure',
-    title: 'Infrastructure',
-    items: ['Linux', 'Nginx', 'VPS Deployment', 'Cloud Architecture', 'Networking'],
-  },
-  {
-    id: 'systems',
-    title: 'Systems & Hardware',
-    items: ['IoT', 'ESP32', 'RF Research', 'Automation', 'EdTech Systems'],
-  },
-];
-
-export const CERTS = [
-  { name: 'Google Cybersecurity Certificate', issuer: 'Google / Coursera',    status: 'progress' },
-  { name: 'CompTIA Security+',                issuer: 'CompTIA',              status: 'progress' },
-  { name: 'Certified Ethical Hacker (CEH)',   issuer: 'EC-Council',           status: 'planned'  },
-  { name: 'OSCP',                             issuer: 'Offensive Security',   status: 'planned'  },
-  { name: 'AWS Cloud Practitioner',           issuer: 'Amazon Web Services',  status: 'planned'  },
-  { name: 'TryHackMe — Jr. Pentester Path',   issuer: 'TryHackMe',            status: 'progress' },
-  { name: 'HackTheBox — Starting Point',      issuer: 'HackTheBox',           status: 'progress' },
-];
-
-export const THEMES = {
-  dark:  { label: 'Dark',  desc: 'Deep navy — default'        },
-  light: { label: 'Light', desc: 'Clean white — professional' },
-  retro: { label: 'Retro', desc: 'Green phosphor CRT'         },
-  glass: { label: 'Glass', desc: 'Frosted glass morphism'     },
-};
-
+/* Terminal window titles after each command. */
 export const ROUTE_TITLES = {
-  '/about':      'eric@portfolio: about',
-  '/projects':   'eric@portfolio: projects',
-  '/skills':     'eric@portfolio: skills',
-  '/security':   'eric@portfolio: [security]',
-  '/social':     'eric@portfolio: social',
-  '/contact':    'eric@portfolio: contact',
-  '/philosophy': 'eric@portfolio: philosophy',
-  '/uses':       'eric@portfolio: uses',
-  '/certs':      'eric@portfolio: certifications',
-  '/ctf':        'eric@portfolio: ctf',
-  '/cv':         'eric@portfolio: cv',
-  '/themes':     'eric@portfolio: themes',
-  '/help':       'eric@portfolio: help',
+  '/help':      'eric@portfolio: help',
+  '/about':     'eric@portfolio: about',
+  '/projects':  'eric@portfolio: projects',
+  '/work':      'eric@portfolio: work',
+  '/skills':    'eric@portfolio: skills',
+  '/contact':   'eric@portfolio: contact',
 };

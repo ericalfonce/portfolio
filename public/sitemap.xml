@@ -6,51 +6,47 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/web-vulnerability-scanner</loc>
-    <priority>0.8</priority>
+    <loc>https://ericalfonce-portfolio.vercel.app/work/mulikascans</loc>
+    <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/imei-guard</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/webscanner</loc>
+    <loc>https://ericalfonce-portfolio.vercel.app/work/iklwalabs</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/bluetooth-jammer-esp32</loc>
+    <loc>https://ericalfonce-portfolio.vercel.app/work/network-billing-system</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/agrimarket</loc>
+    <loc>https://ericalfonce-portfolio.vercel.app/work/lab-logbook</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/digi-attendance</loc>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/school-system</loc>
+    <loc>https://ericalfonce-portfolio.vercel.app/work/ai-text-detector-humanizer</loc>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/cloud-architecture-diagrams</loc>
+    <loc>https://ericalfonce-portfolio.vercel.app/work/mikrotik-voucher-system</loc>
     <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ericalfonce-portfolio.vercel.app/work/pelekapro</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ericalfonce-portfolio.vercel.app/work/katembo-safari</loc>
+    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://ericalfonce-portfolio.vercel.app/work/lenga-safaris</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/kayandra-web</loc>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/landing-page</loc>
-    <priority>0.5</priority>
+    <loc>https://ericalfonce-portfolio.vercel.app/work/tunupay</loc>
+    <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/web-dev-curriculum</loc>
-    <priority>0.5</priority>
+    <loc>https://ericalfonce-portfolio.vercel.app/work/scholarreport</loc>
+    <priority>0.4</priority>
   </url>
 </urlset>

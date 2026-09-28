@@ -84,7 +84,7 @@ function isInternalLink(anchor) {
   // href="mailto:" / "https://" and "/work/x" are distinguished.
   const url = new URL(anchor.href, window.location.href);
   if (url.origin !== window.location.origin) return false;
-  if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/AVATAR')) return false;
+  if (url.pathname.startsWith('/assets/')) return false;
 
   return true;
 }
