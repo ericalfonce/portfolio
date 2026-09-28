@@ -276,4 +276,21 @@ describe('vercel.json', () => {
     expect(vercel.outputDirectory).toBe('dist');
     expect(vercel.buildCommand).toContain('build');
   });
+
+  it('has no unrecognised keys, which make Vercel reject the whole file', () => {
+    /* A stray "//comment" key once sat here. Vercel validated
+       vercel.json against its schema, choked on the unknown property
+       and ignored the config entirely - so the rewrite silently
+       stopped existing and every deep link 404'd again. Keys starting
+       with // are NOT a supported comment syntax here. */
+    const known = new Set(['$schema', 'buildCommand', 'outputDirectory', 'rewrites',
+      'redirects', 'headers', 'cleanUrls', 'trailingSlash', 'framework',
+      'installCommand', 'devCommand', 'functions', 'crons', 'regions',
+      'ignoreCommand', 'public', 'cache', 'images', 'bypassToken']);
+    for (const k of Object.keys(vercel)) {
+      expect(known.has(k), `unknown vercel.json key: ${k}`).toBe(true);
+    }
+    expect(Object.keys(vercel).some((k) => k.startsWith('//')),
+      'vercel.json does not support // comment keys').toBe(false);
+  });
 });

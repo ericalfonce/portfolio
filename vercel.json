@@ -1,8 +1,6 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "cleanUrls": true,
-  "//rewrites": "SPA fallback. Vercel resolves the filesystem BEFORE applying rewrites, so static files (/assets/*, /img/*, /sitemap.xml) are still served directly and only real routes such as /work/:slug fall through to the app shell. Do NOT try to exclude them with a regex lookahead here: `source` is a path-to-regexp pattern, not raw regex, and such a pattern silently matches nothing.",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

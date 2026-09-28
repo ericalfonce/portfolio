@@ -199,6 +199,42 @@ describe('mobile safety', () => {
     expect(css).toMatch(/\.contact__row\s*\{\s*grid-template-columns:\s*1fr/);
   });
 
+  it('gives touch and keyboard their own feedback, not just hover', () => {
+    /* A tap must never be the only way to find out something is
+       interactive, and :hover must not be left to do that job. */
+    expect(css).toMatch(/@media \(hover: hover\) and \(pointer: fine\)/);
+    expect(css).toMatch(/:active/);
+    expect(css).toMatch(/:focus-visible/);
+  });
+
+  it('keeps every :hover rule inside the hover-capable query', () => {
+    /* Otherwise a tap on a phone leaves :hover stuck, and rows shift
+       sideways and stay shifted. */
+    const scoped = css.indexOf('@media (hover: hover)');
+    expect(scoped).toBeGreaterThan(-1);
+    const strays = [...css.matchAll(/^[^\n{}]*:hover[^\n{]*\{/gm)]
+      .map((m) => m[0].trim());
+    for (const s of strays) {
+      expect(css.indexOf(s), `top-level :hover rule: ${s}`).toBeGreaterThanOrEqual(scoped);
+    }
+  });
+
+  it('marks work rows as tappable without any interaction', () => {
+    /* The permanent cue is what replaces hover on a phone. */
+    expect(css).toMatch(/\.index__name::after\s*\{[^}]*content:\s*'\\2192'/);
+  });
+
+  it('makes every work row a real link, so a tap navigates', () => {
+    home.renderHome();
+    const rows = [...document.querySelectorAll('.index__row')];
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      const a = row.querySelector('a');
+      expect(a, 'row is not a link').not.toBeNull();
+      expect(a.getAttribute('href')).toMatch(/^\/work\/[a-z0-9-]+$/);
+    }
+  });
+
   it('sizes the terminal so it cannot push the page wider than the screen', () => {
     /* A fixed px width here is the classic mobile overflow bug. */
     const win = css.slice(css.indexOf('.terminal-window {'), css.indexOf('.titlebar {'));
