@@ -234,7 +234,8 @@ describe('seo shell', () => {
   it('points the social image at a local asset', () => {
     const ogImage = html.match(/property="og:image"\s+content="([^"]+)"/)?.[1];
     expect(ogImage).toBeTruthy();
-    expect(ogImage).toMatch(/ericalfonce-portfolio\.vercel\.app\//);
+    expect(ogImage).toMatch(/ericalfonce\.vercel\.app\//);
+    expect(ogImage).not.toMatch(/AVATAR|avatar/);
   });
 
   it('lists the same social profiles that are in the data layer', () => {
@@ -292,5 +293,54 @@ describe('vercel.json', () => {
     }
     expect(Object.keys(vercel).some((k) => k.startsWith('//')),
       'vercel.json does not support // comment keys').toBe(false);
+  });
+});
+
+/* ================================================================
+   Visibility and canonical domain.
+
+   Both of these shipped broken and neither was visible from the
+   jsdom tests, which assert attributes and properties. A stylesheet
+   beating the hidden attribute, and a canonical URL pointing at a
+   domain that 404s, are only catchable by cross-checking the files
+   against each other.
+   ================================================================ */
+describe('visibility and canonical domain', () => {
+  it('never lets CSS override the hidden attribute', () => {
+    /* The browser's [hidden] { display: none } is a UA-stylesheet rule,
+       so ANY author display rule beats it, ID selector or not. Both
+       #exit-modal { display: grid } and .mobile-menu { display: flex }
+       did exactly that, which rendered the close dialog and a
+       full-screen menu overlay on load, on every viewport. */
+    expect(css).toMatch(/\[hidden\]\s*\{[^}]*display:\s*none\s*!important/);
+  });
+
+  it('uses one canonical domain everywhere, and it is the live one', () => {
+    /* Every SEO surface pointed at ericalfonce-portfolio.vercel.app
+       while the site actually serves from ericalfonce.vercel.app, so
+       canonical, og:url, og:image, JSON-LD, robots.txt and all twelve
+       sitemap URLs pointed at a URL that returns 404. */
+    const site = 'https://ericalfonce.vercel.app';
+    const robots = readFileSync(join(root, 'public/robots.txt'), 'utf8');
+    const sitemap = readFileSync(join(root, 'public/sitemap.xml'), 'utf8');
+
+    const canonical = html.match(/rel="canonical"\s+href="([^"]+)"/)?.[1];
+    const ogUrl = html.match(/property="og:url"\s+content="([^"]+)"/)?.[1];
+
+    expect(canonical, 'no canonical link').toBe(`${site}/`);
+    expect(ogUrl, 'no og:url').toBe(`${site}/`);
+    expect(html).toContain(`"url": "${site}"`);
+    expect(robots).toContain(`Sitemap: ${site}/sitemap.xml`);
+    expect(sitemap).toContain(`<loc>${site}/</loc>`);
+
+    for (const [name, src] of [['index.html', html], ['robots.txt', robots], ['sitemap.xml', sitemap]]) {
+      expect(src, `${name} still references the dead domain`).not.toContain('ericalfonce-portfolio');
+    }
+
+    const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+    expect(locs.length).toBeGreaterThan(1);
+    for (const loc of locs) {
+      expect(loc.startsWith(`${site}/`), `sitemap entry off-canonical: ${loc}`).toBe(true);
+    }
   });
 });

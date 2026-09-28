@@ -42,6 +42,16 @@
 /* ── Reset ───────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
+/* The browser's own `[hidden] { display: none }` lives in the UA
+   stylesheet, so ANY author `display` rule beats it — including an
+   ID selector. That is not theoretical: `#exit-modal { display: grid }`
+   and `.mobile-menu { display: flex }` both overrode it, which put the
+   "Close terminal?" dialog and a full-screen menu overlay on the page
+   at all times, on every viewport, regardless of the hidden attribute
+   the markup correctly set. This guard is what makes `hidden` reliable
+   from here on, so no future display rule can quietly undo it. */
+[hidden] { display: none !important; }
+
 html {
   /* Hidden until boot finishes, so there is no flash of unstyled
      content behind the overlay. */

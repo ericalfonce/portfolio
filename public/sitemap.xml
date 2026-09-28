@@ -1,52 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/</loc>
+    <loc>https://ericalfonce.vercel.app/</loc>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/mulikascans</loc>
+    <loc>https://ericalfonce.vercel.app/work/mulikascans</loc>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/iklwalabs</loc>
+    <loc>https://ericalfonce.vercel.app/work/iklwalabs</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/network-billing-system</loc>
+    <loc>https://ericalfonce.vercel.app/work/network-billing-system</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/lab-logbook</loc>
+    <loc>https://ericalfonce.vercel.app/work/lab-logbook</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/ai-text-detector-humanizer</loc>
+    <loc>https://ericalfonce.vercel.app/work/ai-text-detector-humanizer</loc>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/mikrotik-voucher-system</loc>
+    <loc>https://ericalfonce.vercel.app/work/mikrotik-voucher-system</loc>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/pelekapro</loc>
+    <loc>https://ericalfonce.vercel.app/work/pelekapro</loc>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/katembo-safari</loc>
+    <loc>https://ericalfonce.vercel.app/work/katembo-safari</loc>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/lenga-safaris</loc>
+    <loc>https://ericalfonce.vercel.app/work/lenga-safaris</loc>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/tunupay</loc>
+    <loc>https://ericalfonce.vercel.app/work/tunupay</loc>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://ericalfonce-portfolio.vercel.app/work/scholarreport</loc>
+    <loc>https://ericalfonce.vercel.app/work/scholarreport</loc>
     <priority>0.4</priority>
   </url>
 </urlset>
