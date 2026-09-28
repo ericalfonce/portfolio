@@ -127,15 +127,62 @@ describe('markup contract', () => {
    change cannot quietly reintroduce them.
    ================================================================ */
 describe('restrained structure', () => {
-  it('carries no ambient effect layers', () => {
-    for (const gone of [
-      'cursor-dot', 'cursor-ring', 'cursor-label',
-      'grain-canvas', 'matrix-canvas', 'bg-layer',
-      'footer__marquee', 'data-marquee', 'data-hero-visual', 'data-parallax',
-    ]) {
-      expect(html, `${gone} should be gone`).not.toContain(gone);
-    }
-  });
+    it('keeps the decorative layers deliberately small', () => {
+      /* matrix-canvas and grain-canvas stay gone: the matrix read as a
+         cliché and was replaced by the circuit board, and the grain was
+         never worth the cost. So are the old layout effects. */
+      for (const gone of [
+        'matrix-canvas', 'grain-canvas', 'cursor-label', 'bg-layer',
+        'footer__marquee', 'data-marquee', 'data-hero-visual', 'data-parallax',
+        'sculpture', 'reveal', 'grain',
+      ]) {
+        expect(html, `${gone} should be gone`).not.toContain(gone);
+      }
+
+      /* What is allowed, and expected: the circuit canvas, the
+         scanline overlay, and a cursor that only ever runs on a fine
+         pointer. The markup asserts they exist; the safety properties
+         are asserted in the tests below. */
+      for (const present of ['id="atmosphere"', 'class="scanlines"', 'cursor-dot', 'cursor-ring']) {
+        expect(html, `${present} should be present`).toContain(present);
+      }
+    });
+
+    it('never hides the native pointer to make room for the custom one', () => {
+      /* The old build set cursor: none site-wide. The replacement
+         layers over the arrow instead, so a dropped frame still shows
+         a real pointer, and anything that cannot be decorated still
+         works. Comments are stripped first, because this file
+         documents the very property being asserted. */
+      const rules = css.replace(/\/\*[\s\S]*?\*\//g, '');
+      expect(rules).not.toMatch(/cursor:\s*none/);
+      expect(rules).not.toMatch(/cursor:\s*hidden/);
+      expect(rules).not.toMatch(/cursor:\s*url\(/);
+    });
+
+    it('gates the custom cursor to fine pointers and reduced motion off', () => {
+      const dot = css.match(/\.cursor-dot\s*[,{]/);
+      expect(dot, 'cursor-dot is styled').not.toBeNull();
+
+      /* Coarse pointers never get it. */
+      expect(css).toMatch(/@media not all and \(hover: hover\) and \(pointer: fine\)/);
+      expect(css).toMatch(/\.cursor-dot,\s*\.cursor-ring\s*\{\s*display:\s*none/);
+
+      /* It is revealed only once the pointer has moved, and hidden
+         while a dialog or the mobile menu owns the screen. */
+      expect(css).toMatch(/has-custom-cursor \.cursor-dot/);
+      expect(css).toMatch(/menu-open \.cursor-ring/);
+      expect(css).toMatch(/exit-modal:not\(\[hidden\]\)\) \.cursor-ring/);
+
+      /* Never interactive, never reachable by keyboard. Both are
+         declared by one shared rule, so match the pair. */
+      const shared = css.match(/\.cursor-dot,\s*\.cursor-ring\s*\{([^}]*)\}/);
+      expect(shared, 'no shared cursor rule').not.toBeNull();
+      expect(shared[1]).toMatch(/pointer-events:\s*none/);
+      expect(shared[1]).toMatch(/position:\s*fixed/);
+      expect(html).toMatch(/class="cursor-ring" aria-hidden="true"/);
+      expect(html).toMatch(/class="cursor-dot" aria-hidden="true"/);
+    });
 
   it('has no numbered section labels', () => {
     expect(html).not.toMatch(/section__index/);

@@ -7,11 +7,10 @@
 
    On atmosphere: the redesign removed the previous cinematic layer
    (grain, custom cursor, parallax, pointer tilt, marquee). What is
-   back is a deliberately small one — a matrix rain canvas and a
-   scanline overlay, both decorative only. See src/atmosphere.js for
-   why it is built to be cheap. The custom cursor stays out: it
-   replaced the native pointer site-wide, which is worse for anyone
-   using a screen magnifier or a stylus.
+   back is a deliberately small one — a circuit-trace canvas, a
+   scanline overlay, and a crosshair cursor on fine pointers only.
+   All decorative. See src/atmosphere.js and src/cursor.js for why
+   each is built the way it is.
    ================================================================ */
 
 import { initBoot } from './boot.js';
@@ -21,6 +20,7 @@ import { renderHome } from './site/home.js';
 import { renderProjectRoute } from './site/project.js';
 import { getProject } from './data.js';
 import { initAtmosphere } from './atmosphere.js';
+import { initCursor } from './cursor.js';
 import { prefersReducedMotion } from './utils.js';
 
 /* ── Content ── */
@@ -115,10 +115,11 @@ function initMobileMenu() {
 }
 initMobileMenu();
 
-/* ── Atmosphere ──
-   Starts after the content is on screen, so the rain never competes
-   with the boot sequence for the first paint. */
+/* ── Atmosphere + cursor ──
+   Both start after the content is on screen, so the circuit traces
+   never compete with the boot sequence for the first paint. */
 initAtmosphere();
+initCursor();
 
 /* ── Boot ──
    The terminal is wired synchronously above, so it is already

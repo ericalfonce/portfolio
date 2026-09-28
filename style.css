@@ -95,7 +95,7 @@ img { max-width: 100%; height: auto; display: block; }
   height: 100%;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.85;
 }
 .atmosphere[data-atmosphere='off'] { display: none; }
 
@@ -117,6 +117,54 @@ img { max-width: 100%; height: auto; display: block; }
 /* Content has to sit above both. The shell, views and footer are all
    in normal flow, so an explicit stacking context per view is enough. */
 .nav, .mobile-menu, #app, .footer { position: relative; z-index: 2; }
+
+/* ══════════════ Custom cursor ══════════════
+   Fine pointers only. The native arrow is deliberately left alone -
+   nothing here sets cursor: none - so on a laggy frame the real
+   pointer is still visible underneath these. They sit above content
+   but take no events, so they can never block a tap. */
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 400;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform;
+}
+.cursor-dot {
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.cursor-ring {
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  opacity: 0;
+}
+
+/* Only revealed once the pointer has actually moved, so they never
+   sit parked in the corner on a load. */
+html[data-cursor='on'].has-custom-cursor .cursor-dot { opacity: 1; }
+html[data-cursor='on'].has-custom-cursor .cursor-ring { opacity: 0.6; }
+
+/* A dialog or the mobile menu takes over: hide them so the ring
+   cannot end up stranded over a modal. */
+html.menu-open .cursor-dot,
+html.menu-open .cursor-ring,
+body:has(#exit-modal:not([hidden])) .cursor-dot,
+body:has(#exit-modal:not([hidden])) .cursor-ring { opacity: 0; }
+
+/* Coarse pointers and reduced motion never get it at all. */
+@media not all and (hover: hover) and (pointer: fine) {
+  .cursor-dot, .cursor-ring { display: none; }
+}
 
 a { color: inherit; text-decoration: none; }
 
@@ -1165,5 +1213,9 @@ kbd {
   .glitch::after,
   [data-route-heading]::before,
   [data-route-heading]::after { content: none !important; }
+
+  /* The circuit board is motion, so it goes. The scanline overlay is
+     static, so it stays. */
   .atmosphere { display: none; }
+  .cursor-dot, .cursor-ring { display: none; }
 }

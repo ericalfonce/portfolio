@@ -88,10 +88,16 @@
 <body>
 
   <!-- ══════════════ Atmosphere (decorative, behind all content) ══════════════ -->
-  <!-- Painted by src/atmosphere.js. aria-hidden and never interactive.
-       The scanline overlay is a single CSS gradient, not an image. -->
+  <!-- Circuit traces painted by src/atmosphere.js. aria-hidden and never
+       interactive. The scanline overlay is a single CSS gradient. -->
   <canvas id="atmosphere" class="atmosphere" aria-hidden="true"></canvas>
   <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- Custom cursor. Fine pointers only, never above content, and the
+       native arrow is not hidden, so this layers over it rather than
+       replacing it. Off entirely on touch and reduced motion. -->
+  <div class="cursor-ring" aria-hidden="true"></div>
+  <div class="cursor-dot" aria-hidden="true"></div>
 
   <!-- ══════════════ Boot Sequence Overlay ══════════════ -->
   <div id="boot-screen" role="status" aria-live="polite">
