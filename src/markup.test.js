@@ -127,25 +127,44 @@ describe('markup contract', () => {
    change cannot quietly reintroduce them.
    ================================================================ */
 describe('restrained structure', () => {
-    it('keeps the decorative layers deliberately small', () => {
-      /* matrix-canvas and grain-canvas stay gone: the matrix read as a
-         cliché and was replaced by the circuit board, and the grain was
-         never worth the cost. So are the old layout effects. */
+    it('has no ambient layer behind the content', () => {
+      /* Two were tried and both were cut: a matrix rain, then a circuit
+         board. The cyber character now comes from the glitch, the
+         terminal and the typography, so nothing decorative may sit
+         behind the page. */
       for (const gone of [
-        'matrix-canvas', 'grain-canvas', 'cursor-label', 'bg-layer',
-        'footer__marquee', 'data-marquee', 'data-hero-visual', 'data-parallax',
-        'sculpture', 'reveal', 'grain',
+        'atmosphere', 'scanlines', 'matrix-canvas', 'grain-canvas',
+        'cursor-label', 'bg-layer', 'footer__marquee', 'data-marquee',
+        'data-hero-visual', 'data-parallax', 'sculpture', 'reveal', 'grain',
       ]) {
         expect(html, `${gone} should be gone`).not.toContain(gone);
       }
+      expect(css).not.toMatch(/\.atmosphere/);
+      expect(css).not.toMatch(/\.scanlines/);
 
-      /* What is allowed, and expected: the circuit canvas, the
-         scanline overlay, and a cursor that only ever runs on a fine
-         pointer. The markup asserts they exist; the safety properties
-         are asserted in the tests below. */
-      for (const present of ['id="atmosphere"', 'class="scanlines"', 'cursor-dot', 'cursor-ring']) {
-        expect(html, `${present} should be present`).toContain(present);
-      }
+      /* The crosshair cursor is the one decorative layer that stays,
+         and only on fine pointers. */
+      expect(html).toContain('cursor-dot');
+      expect(html).toContain('cursor-ring');
+    });
+
+    it('opens on the boot sequence and hands over to the site', () => {
+      /* The preloader has to be in the markup, ahead of everything,
+         and nothing may make it vanish without the JS running. */
+      const boot = html.indexOf('id="boot-screen"');
+      expect(boot, 'boot screen missing').toBeGreaterThan(-1);
+      expect(boot, 'boot screen must come before the app').toBeLessThan(html.indexOf('id="app"'));
+      expect(html).toMatch(/class="boot-logo"/);
+      expect(html).toMatch(/id="boot-log"/);
+
+      /* Without JS the overlay would trap the visitor, so the noscript
+         block has to release it. */
+      expect(html).toMatch(/<noscript>[\s\S]*#boot-screen\s*\{\s*display:\s*none\s*!important/);
+
+      /* The cursor layers must not be able to show through the boot
+         screen, and must not be on top of it either. */
+      expect(css).toMatch(/#boot-screen[\s\S]*?z-index:\s*999/);
+      expect(css).toMatch(/\.cursor-dot,\s*\.cursor-ring[\s\S]*?z-index:\s*400/);
     });
 
     it('never hides the native pointer to make room for the custom one', () => {
@@ -274,12 +293,14 @@ describe('restrained structure', () => {
        could take a pointer event, a tap on a work row or a terminal
        command would silently stop working - the exact class of bug
        that is invisible in a DOM check. */
-    for (const sel of ['.atmosphere', '.scanlines']) {
-      const m = css.match(new RegExp('\\' + sel + '\\s*\\{([^}]*)\\}'));
-      expect(m, `${sel} has no rule`).not.toBeNull();
-      expect(m[1], `${sel} must not intercept pointer events`)
-        .toMatch(/pointer-events:\s*none/);
-    }
+    /* The cursor is now the only decorative layer, and it must never
+       take a pointer event: it sits above the content at z-index 400,
+       so an event-capable decoration here would swallow taps on a work
+       row or a terminal command. */
+    const shared = css.match(/\.cursor-dot,\s*\.cursor-ring\s*\{([^}]*)\}/);
+    expect(shared, 'no shared cursor rule').not.toBeNull();
+    expect(shared[1], 'the cursor must not intercept pointer events')
+      .toMatch(/pointer-events:\s*none/);
   });
 
   it('keeps the glitch from ever hiding the real text', () => {

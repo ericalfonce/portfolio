@@ -5,12 +5,12 @@
    is functional even while the boot overlay is still on screen, then
    the boot sequence runs and hands over to the home view.
 
-   On atmosphere: the redesign removed the previous cinematic layer
-   (grain, custom cursor, parallax, pointer tilt, marquee). What is
-   back is a deliberately small one — a circuit-trace canvas, a
-   scanline overlay, and a crosshair cursor on fine pointers only.
-   All decorative. See src/atmosphere.js and src/cursor.js for why
-   each is built the way it is.
+   On atmosphere: there is no background texture layer. A matrix rain
+   was tried and read as a screensaver, a circuit board replaced it and
+   was then cut too — the cyber character now comes from the glitch,
+   the terminal and the typography, not from anything behind the
+   content. The crosshair cursor on fine pointers is the only
+   decorative layer left. See src/cursor.js.
    ================================================================ */
 
 import { initBoot } from './boot.js';
@@ -19,7 +19,6 @@ import { terminalReady } from './terminal.js';
 import { renderHome } from './site/home.js';
 import { renderProjectRoute } from './site/project.js';
 import { getProject } from './data.js';
-import { initAtmosphere } from './atmosphere.js';
 import { initCursor } from './cursor.js';
 import { prefersReducedMotion } from './utils.js';
 
@@ -115,10 +114,9 @@ function initMobileMenu() {
 }
 initMobileMenu();
 
-/* ── Atmosphere + cursor ──
-   Both start after the content is on screen, so the circuit traces
-   never compete with the boot sequence for the first paint. */
-initAtmosphere();
+/* ── Cursor ──
+   Starts after the content is on screen, so it never competes with
+   the boot sequence for the first paint. */
 initCursor();
 
 /* ── Boot ──
