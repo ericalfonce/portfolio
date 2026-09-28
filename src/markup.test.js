@@ -244,3 +244,36 @@ describe('seo shell', () => {
     }
   });
 });
+
+/* ================================================================
+   Deployment config.
+
+   The SPA fallback was silently broken: `rewrites[].source` is a
+   path-to-regexp pattern, not raw regex, so the negative lookahead
+   that was meant to exclude /assets/ matched nothing at all and every
+   deep link such as /work/:slug returned 404 in production while
+   working fine on localhost. Nothing else would have caught it.
+   ================================================================ */
+describe('vercel.json', () => {
+  const vercel = JSON.parse(readFileSync(join(root, 'vercel.json'), 'utf8'));
+
+  it('rewrites every non-file route to the app shell', () => {
+    const fallback = vercel.rewrites?.find(
+      (r) => r.destination === '/index.html' || r.destination === '/'
+    );
+    expect(fallback, 'no rewrite to index.html').toBeDefined();
+    expect(fallback.source).toBe('/(.*)');
+  });
+
+  it('uses no regex-only syntax, which path-to-regexp silently ignores', () => {
+    for (const r of vercel.rewrites ?? []) {
+      expect(r.source, 'lookaheads are not valid path-to-regexp').not.toMatch(/\(\?!/);
+      expect(r.source, 'inline capture groups are not valid path-to-regexp').not.toMatch(/\(\?:/);
+    }
+  });
+
+  it('keeps the build pointed at dist', () => {
+    expect(vercel.outputDirectory).toBe('dist');
+    expect(vercel.buildCommand).toContain('build');
+  });
+});
