@@ -67,9 +67,17 @@
   }
   </script>
 
-  <!-- Favicons -->
-  <link rel="icon"             type="image/png" href="/img/mulikascans-favicon-192.png" sizes="192x192" />
+  <!-- Favicons
+       The pixelated glitch marks restored from the V1 build, which is
+       what the tab icon should be. sizes are declared per size so a
+       browser picks the one it needs instead of downscaling blindly;
+       the ICO-style 32 is the fallback for anything that ignores
+       sizes entirely. -->
+  <link rel="icon" type="image/png" sizes="32x32"   href="/img/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="96x96"   href="/img/favicon-96.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/img/mulikascans-favicon-192.png" />
   <link rel="apple-touch-icon" type="image/png" href="/img/mulikascans-favicon-192.png" />
+  <link rel="mask-icon" href="/img/favicon-32.png" color="#22D3EE" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -105,9 +113,14 @@
  ███████╗██║  ██║██║╚██████╗
  ╚══════╝╚═╝  ╚═╝╚═╝ ╚═════╝</pre>
       <div id="boot-log"></div>
+      <!-- A 20s gate has to be escapable, not just technically
+           skippable. This is a real focusable button, so the way out
+           does not depend on the visitor knowing to press a key. -->
       <div class="boot-final">
-        <span class="boot-cursor" aria-hidden="true"></span>
-        <span>press any key to skip</span>
+        <button class="boot-skip" type="button" data-boot-skip>
+          skip <span aria-hidden="true">→</span>
+        </button>
+        <span class="boot-hint">or press any key</span>
       </div>
     </div>
   </div>

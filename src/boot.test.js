@@ -1,28 +1,36 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { hasBootedThisSession, runBoot, initBoot, resetBootSession, BOOT_LINES } from './boot.js';
+import { hasBootedThisSession, runBoot, initBoot, resetBootSession, BOOT_LINES, BOOT_TARGET_MS, BOOT_TOTALS } from './boot.js';
 
-function mountBootDOM() {
+function mountBootDOM({ withSkip = true } = {}) {
   document.body.innerHTML = `
     <div id="boot-screen">
       <div id="boot-log"></div>
+      ${withSkip ? '<button type="button" data-boot-skip>skip</button>' : ''}
     </div>
   `;
+}
+
+/* Pin navigator.connection so the slow-connection branch is testable
+   and cannot depend on whatever the host machine reports. */
+function setConnection(conn) {
+  vi.stubGlobal('navigator', { ...navigator, connection: conn });
 }
 
 const setReduced = (matches) =>
   vi.stubGlobal('matchMedia', () => ({ matches, addEventListener() {}, removeEventListener() {} }));
 
 describe('BOOT_LINES', () => {
-  it('keeps the full sequence inside the 2.5–4s target', () => {
+  it('runs for the full 20 seconds', () => {
     const dwell = BOOT_LINES.reduce((sum, l) => sum + l.ms, 0);
-    const total = dwell + 160 /* pre-ready beat */ + 520 /* exit fade */;
-    expect(total).toBeGreaterThanOrEqual(2500);
-    expect(total).toBeLessThanOrEqual(4000);
+    const total = dwell + BOOT_TOTALS.preReady + BOOT_TOTALS.exit;
+    expect(BOOT_TARGET_MS).toBe(20_000);
+    expect(dwell).toBe(BOOT_TARGET_MS);
+    expect(total).toBe(20_680);
   });
 
-  it('ends on a VERIFIED / READY line', () => {
+  it('lands on a signature line before the exit fade', () => {
     const last = BOOT_LINES[BOOT_LINES.length - 1];
-    expect(last.label).toBe('VERIFIED');
+    expect(last.label).toBe('CONTENT VERIFIED');
     expect(last.status).toBe('READY');
   });
 
@@ -31,6 +39,14 @@ describe('BOOT_LINES', () => {
       expect(line.ms).toBeGreaterThan(0);
       expect(line.label).toBeTruthy();
     }
+  });
+
+  it('is long enough to fill the log without scrolling on a desktop', () => {
+    /* The log reserves 25rem, and 21 lines at line-height 1.9 on
+       0.8125rem is about 25.9rem, so this is deliberately at the
+       edge rather than far under. Asserted so a future line removal
+       cannot quietly leave the box half empty. */
+    expect(BOOT_LINES.length).toBeGreaterThanOrEqual(20);
   });
 });
 
@@ -114,19 +130,48 @@ describe('initBoot', () => {
   });
 });
 
+/* The full run is 20s of real time. Every test that lets it play out
+   to the end drives fake timers, so the suite stays fast and the
+   20 second contract is still asserted for real. */
 describe('runBoot', () => {
   beforeEach(() => {
+    /* documentElement classes persist across tests in a file, and an
+       earlier initBoot test leaves is-booted set. Clear it so the
+       mid-sequence assertions below test this run and not a leftover. */
+    document.documentElement.className = '';
     resetBootSession();
     mountBootDOM();
     setReduced(false);
+    setConnection({ effectiveType: '4g', rtt: 50, saveData: false });
+    vi.useFakeTimers();
   });
 
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  /** Let the whole sequence play out, then flush the exit fade. */
+  async function playToEnd() {
+    const done = runBoot();
+    await vi.advanceTimersByTimeAsync(BOOT_TARGET_MS + 5_000);
+    return done;
+  }
+
+  /** Start the sequence and skip it immediately. */
+  function skipNow() {
+    const done = runBoot();
+    const screen = document.getElementById('boot-screen');
+    screen.querySelector('[data-boot-skip]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    return done;
+  }
 
   it('is skippable — a click jumps straight to the finished state', async () => {
     const screen = document.getElementById('boot-screen');
     const done = runBoot();
     screen.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(2_000);
     await done;
 
     expect(screen.classList.contains('boot-hidden')).toBe(true);
@@ -141,14 +186,16 @@ describe('runBoot', () => {
   it('is skippable with the keyboard', async () => {
     const done = runBoot();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await vi.advanceTimersByTimeAsync(2_000);
     await done;
     expect(document.getElementById('boot-screen').classList.contains('boot-hidden')).toBe(true);
   });
 
   it('removes its skip listeners once the sequence finishes', async () => {
-    await runBoot();
+    /* Spy before starting, so the adds and the removes are both seen. */
     const add = vi.spyOn(document, 'addEventListener');
     const remove = vi.spyOn(document, 'removeEventListener');
+    await playToEnd();
     /* If the listeners leaked, a later click would still resolve the
        settled promise and the counts would not balance. */
     expect(add.mock.calls.filter(([t]) => t === 'click').length).toBe(0);
@@ -156,7 +203,79 @@ describe('runBoot', () => {
   });
 
   it('marks the session on the normal (non-reduced) path too', async () => {
-    await runBoot();
+    await playToEnd();
     expect(hasBootedThisSession()).toBe(true);
+  });
+
+  it('is escapable through the visible skip button', async () => {
+    /* A 20 second gate is only acceptable if the way out is visible,
+       not merely undocumented. */
+    const screen = document.getElementById('boot-screen');
+    const done = skipNow();
+    await vi.advanceTimersByTimeAsync(2_000);
+    await done;
+    expect(screen.classList.contains('boot-hidden')).toBe(true);
+  });
+
+  it('plays the full 20s and every line when left alone', async () => {
+    const screen = document.getElementById('boot-screen');
+    const done = runBoot();
+
+    /* Part way through, nothing has handed over yet. */
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(screen.classList.contains('boot-hidden')).toBe(false);
+    expect(document.documentElement.classList.contains('is-booted')).toBe(false);
+    const midway = document.getElementById('boot-log').querySelectorAll('.boot-line').length;
+    expect(midway).toBeGreaterThan(0);
+    expect(midway).toBeLessThan(BOOT_LINES.length);
+
+    /* At the end everything is written and the page is handed over. */
+    await vi.advanceTimersByTimeAsync(15_000);
+    await done;
+    expect(document.getElementById('boot-log').querySelectorAll('.boot-line').length)
+      .toBe(BOOT_LINES.length + 1);
+    expect(screen.classList.contains('boot-hidden')).toBe(true);
+    expect(document.documentElement.classList.contains('is-booted')).toBe(true);
+    expect(screen.classList.contains('boot-fast')).toBe(false);
+  });
+
+  it.each([
+    ['2g', { effectiveType: '2g', rtt: 20 }],
+    ['slow-2g', { effectiveType: 'slow-2g', rtt: 10 }],
+    ['a very high rtt', { effectiveType: '4g', rtt: 3000 }],
+    ['save-data', { effectiveType: '4g', rtt: 50, saveData: true }],
+  ])('shortens the run on %s', async (_label, conn) => {
+    setConnection(conn);
+    const screen = document.getElementById('boot-screen');
+    const done = runBoot();
+    expect(screen.classList.contains('boot-fast'), 'flags the shortened run').toBe(true);
+
+    /* The shortened schedule still writes every line, just faster. */
+    await vi.advanceTimersByTimeAsync(BOOT_TOTALS.slowTarget + 2_000);
+    await done;
+    expect(document.getElementById('boot-log').querySelectorAll('.boot-line').length)
+      .toBe(BOOT_LINES.length + 1);
+    expect(screen.classList.contains('boot-hidden')).toBe(true);
+  });
+
+  it('completes the shortened run well before 20s', async () => {
+    setConnection({ effectiveType: '2g', rtt: 20 });
+    const screen = document.getElementById('boot-screen');
+    const done = runBoot();
+    await vi.advanceTimersByTimeAsync(BOOT_TOTALS.slowTarget + 2_000);
+    await done;
+    expect(screen.classList.contains('boot-hidden')).toBe(true);
+    expect(BOOT_TOTALS.slowTarget).toBeLessThan(BOOT_TARGET_MS);
+  });
+
+  it('still works when navigator.connection is absent', async () => {
+    setConnection(undefined);
+    const screen = document.getElementById('boot-screen');
+    const done = runBoot();
+    expect(screen.classList.contains('boot-fast')).toBe(false);
+    screen.querySelector('[data-boot-skip]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(2_000);
+    await done;
+    expect(screen.classList.contains('boot-hidden')).toBe(true);
   });
 });

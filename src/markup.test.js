@@ -179,6 +179,25 @@ describe('restrained structure', () => {
       expect(rules).not.toMatch(/cursor:\s*url\(/);
     });
 
+    it('makes the boot overlay usable on a phone', () => {
+      /* 21 lines plus the logo will not fit a short screen, so the
+         phone layout has to let the log scroll, and pin the skip row
+         to the bottom of the viewport so the way out of a 20 second
+         run is reachable with a thumb. */
+      const phone = css.slice(css.indexOf('@media (max-width: 640px)'));
+      expect(phone, 'no phone media query in the boot block').toContain('.boot-final');
+
+      const bootPhone = phone.slice(0, phone.indexOf('\n}'));
+      expect(bootPhone, 'the log must scroll on a phone')
+        .toMatch(/#boot-log[\s\S]*overflow:\s*hidden auto/);
+      expect(bootPhone, 'the log must not reserve a fixed height on a phone')
+        .toMatch(/#boot-log[\s\S]*min-height:\s*0/);
+      expect(bootPhone, 'the skip row must be pinned to the bottom')
+        .toMatch(/\.boot-final[\s\S]*position:\s*fixed[\s\S]*bottom:/);
+      expect(bootPhone, 'the skip button needs a real touch target')
+        .toMatch(/\.boot-skip[\s\S]*padding:\s*0\.75rem/);
+    });
+
     it('gates the custom cursor to fine pointers and reduced motion off', () => {
       const dot = css.match(/\.cursor-dot\s*[,{]/);
       expect(dot, 'cursor-dot is styled').not.toBeNull();
@@ -371,6 +390,32 @@ describe('seo shell', () => {
     expect(html).toContain('rel="canonical"');
     expect(html).toContain('property="og:title"');
     expect(html).toContain('name="twitter:card"');
+  });
+
+  it('serves the pixelated glitch favicon, declared per size', () => {
+    /* The tab icon is the restored V1 pixel/glitch mark, not the
+       smooth project logo. Sizes must be declared per link so a
+       browser picks a real file rather than rescaling the 32. */
+    const icons = [...html.matchAll(/<link rel="icon"[^>]*>/g)].map((m) => m[0]);
+    expect(icons.length, 'expected more than one icon size').toBeGreaterThan(1);
+
+    for (const tag of icons) {
+      expect(tag, 'every icon needs an explicit size').toMatch(/sizes="(\d+)x\1"/);
+      expect(tag, 'every icon needs a type').toMatch(/type="image\/png"/);
+    }
+
+    expect(html, 'the 32 is the fallback').toContain('/img/favicon-32.png');
+    expect(html, 'the 96 is the small-screen icon').toContain('/img/favicon-96.png');
+
+    /* Both restored files must actually be on disk, or the tab shows a
+       broken icon with no error anyone would notice. */
+    for (const file of ['favicon-32.png', 'favicon-96.png']) {
+      expect(existsSync(join(root, 'public', 'img', file)), `${file} is missing`).toBe(true);
+    }
+
+    /* apple-touch-icon stays on the 192 so iOS home screens do not get
+       a 32px icon blown up. */
+    expect(html).toMatch(/rel="apple-touch-icon"[^>]*mulikascans-favicon-192\.png/);
   });
 
   it('points the social image at a local asset', () => {
