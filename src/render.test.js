@@ -261,6 +261,26 @@ describe('mobile safety', () => {
     }
   });
 
+  it('never forces a logo panel into a shape the mark is not', () => {
+    /* The marks are square (2160x2160). A hardcoded aspect-ratio on
+       the panel shrank them to fit a wide box and left the panel
+       looking half empty, which read as a broken image. The panel must
+       hug its content, with a height cap instead of a forced shape. */
+    for (const sel of ['.feature__visual', '.case__visual']) {
+      const m = css.match(new RegExp('\\' + sel + '\\s*\\{([^}]*)\\}'));
+      expect(m, `${sel} has no rule`).not.toBeNull();
+      expect(m[1], `${sel} must not force an aspect-ratio`).not.toMatch(/aspect-ratio/);
+    }
+    for (const sel of ['.feature__mark', '.case__mark']) {
+      const m = css.match(new RegExp('\\' + sel + '\\s*\\{([^}]*)\\}'));
+      expect(m, `${sel} has no rule`).not.toBeNull();
+      expect(m[1], `${sel} needs a height cap so a big asset cannot dominate`)
+        .toMatch(/max-height:\s*min\(/);
+      expect(m[1], `${sel} must not be height-constrained by the parent`)
+        .not.toMatch(/max-height:\s*100%/);
+    }
+  });
+
   it('sizes the terminal so it cannot push the page wider than the screen', () => {
     /* A fixed px width here is the classic mobile overflow bug. */
     const win = css.slice(css.indexOf('.terminal-window {'), css.indexOf('.titlebar {'));

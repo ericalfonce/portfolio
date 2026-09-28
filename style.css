@@ -421,19 +421,24 @@ kbd {
   margin-top: 2rem;
 }
 
-/* The real brand mark, presented as a panel rather than decoration */
+/* The real brand mark, presented as a panel rather than decoration.
+   Deliberately no aspect-ratio here. The marks are square (2160x2160),
+   and forcing one into a 4:3 box shrank it and left the panel looking
+   half empty. The panel now hugs whatever shape the artwork actually
+   is, and a height cap stops a large asset from dominating the page. */
 .feature__visual {
   display: grid;
   place-items: center;
-  aspect-ratio: 4 / 3;
   border: 1px solid var(--line);
   background: var(--bg-elev);
-  padding: 2rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
 }
 .feature__mark {
-  max-width: 100%;
-  max-height: 100%;
   width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: min(38vh, 17rem);
+  object-fit: contain;
 }
 
 /* ── Index rows ── */
@@ -486,7 +491,7 @@ kbd {
 
 @media (max-width: 860px) {
   .feature__inner { grid-template-columns: 1fr; }
-  .feature__visual { aspect-ratio: 16 / 7; order: -1; }
+  .feature__visual { order: -1; }
   .index__link { grid-template-columns: 1fr; }
   .index__meta { text-align: left; }
 }
@@ -853,29 +858,32 @@ kbd {
   max-width: 40ch;
 }
 
-/* Logo panel. It now carries a caption, so it is a column: the mark
-   centres in whatever space is left once the caption has taken its
-   share. min-height: 0 on the art box is what lets the mark's
-   max-height: 100% resolve against it inside a flex column. */
+/* Logo panel. Carries a caption, so it is a column: mark, then the
+   words naming where it came from. No aspect-ratio, for the same
+   reason as .feature__visual - the marks are square, and a wide box
+   shrank them and left the panel looking empty. */
 .case__visual {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.25rem;
   margin: 3rem 0;
-  padding: 2.5rem;
-  aspect-ratio: 4 / 1.9;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
   border: 1px solid var(--line);
   background: var(--bg-elev);
 }
 .case__visual-art {
   display: grid;
   place-items: center;
-  flex: 1;
-  min-height: 0;
   width: 100%;
 }
-.case__mark { max-height: 100%; max-width: 100%; width: auto; }
+.case__mark {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: min(45vh, 19rem);
+  object-fit: contain;
+}
 .case__caption {
   font-family: var(--font-mono);
   font-size: 0.75rem;
