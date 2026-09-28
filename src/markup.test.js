@@ -274,9 +274,9 @@ describe('restrained structure', () => {
     expect(html).not.toContain('id="intro"');
   });
 
-  it('uses the sampled brand palette and only one accent hue', () => {
-    expect(css).toContain('--bg:          #080E14');
-    expect(css).toContain('--accent:      #22D3EE');
+  it('uses the chosen palette and only one accent hue', () => {
+    expect(css).toContain('--bg:          #080808');
+    expect(css).toContain('--accent:      #FF6F00');
 
     /* The scanline overlay is the one gradient the cyber theme is
        allowed, and it is asserted by its own test below. Every other
@@ -293,10 +293,31 @@ describe('restrained structure', () => {
     expect(css).not.toMatch(/box-shadow/);
   });
 
-  it('loads exactly two font families', () => {
+  it('loads exactly three font families', () => {
     const fonts = html.match(/fonts\.googleapis\.com\/css2\?([^"]+)"/)?.[1] || '';
     const families = fonts.match(/family=([^:&]+)/g) || [];
-    expect(families).toHaveLength(2);
+    expect(families).toHaveLength(3);
+    for (const expected of ['Space+Grotesk', 'Plus+Jakarta+Sans', 'JetBrains+Mono']) {
+      expect(families.join(' ')).toContain(expected);
+    }
+  });
+
+  it('provides the light theme as an explicit data-theme override', () => {
+    /* Dark is the default built into :root; light only exists behind
+       [data-theme="light"] so a stored/OS choice can win without the
+       page ever flashing the wrong palette. */
+    expect(css).toMatch(/:root\s*\{[\s\S]*?--bg:\s*#080808/);
+    expect(css).toMatch(/:root\[data-theme='light'\]\s*\{[\s\S]*?--bg:\s*#FAFAFA/);
+    expect(css).toMatch(/:root\[data-theme='light'\]\s*\{[\s\S]*?--text:\s*#111111/);
+  });
+
+  it('ships the nav theme toggle and the pre-paint resolver', () => {
+    expect(html).toMatch(/<button class="theme-toggle"[^>]*data-theme-toggle/);
+    /* The inline head script must win before the stylesheet paints. */
+    const head = html.slice(0, html.indexOf('<link rel="stylesheet"'));
+    expect(head).toMatch(/localStorage\.getItem\('ea-theme'\)/);
+    expect(head).toMatch(/prefers-color-scheme: light/);
+    expect(head).toMatch(/setAttribute\('data-theme', t\)/);
   });
 
   it('keeps the name as the only oversized type', () => {

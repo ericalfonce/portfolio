@@ -20,6 +20,7 @@ import { renderHome } from './site/home.js';
 import { renderProjectRoute } from './site/project.js';
 import { getProject } from './data.js';
 import { initCursor } from './cursor.js';
+import { initTheme } from './theme.js';
 import { prefersReducedMotion } from './utils.js';
 
 /* ── Content ── */
@@ -84,6 +85,12 @@ onRoute(showView);
 /* Resolve whatever the visitor actually requested, so a direct hit on
    /work/:slug renders that route instead of always starting on home. */
 emitRoute();
+
+/* ── Theme ──
+   The inline head script already set data-theme before first paint;
+   this only wires the nav toggle and the OS listener. So it can be
+   initialised as late as the rest of the interactive wiring. */
+initTheme();
 
 /* ── Mobile menu ── */
 function initMobileMenu() {

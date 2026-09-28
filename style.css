@@ -3,9 +3,14 @@
    ---------------------------------------------------------------
    Design rules this file follows:
      · Near-black background, off-white text, one restrained accent
-       (cyan, sampled from the real MulikaScans brand palette).
-     · Two font families only: Inter Tight for text, JetBrains Mono
-       for the terminal and small labels.
+       (orange #FF6F00) used only for links, hover states, arrows,
+       small labels, active states and tiny highlights — never for
+       large backgrounds or whole sections.
+     · Three font families: Space Grotesk for headings, Plus Jakarta
+       Sans for text, JetBrains Mono for the terminal and labels.
+     · Dark is the built-in default; light is the inverted palette
+       behind html[data-theme="light"], applied before first paint by
+       a tiny inline script so there is no flash.
      · Hairline rules and whitespace do the structural work, not
        cards, gradients, glows or shadows.
      · Motion is limited to a single hero fade, and that one is
@@ -14,22 +19,32 @@
 
 /* ── Tokens ──────────────────────────────────────────────────── */
 :root {
-  /* Brand palette — sampled from MulikaScans / IklwaLabs assets */
-  --bg:          #080E14;
-  --bg-elev:     #0C131B;
-  --bg-inset:    #060A0F;
+  /* Dark palette — near-black with a warm, soft grey text scale */
+  --bg:          #080808;
+  --bg-elev:     #0E0E0E;
+  --bg-inset:    #050505;
 
-  --text:        #F2F2FF;
-  --muted:       #8B94A6;
-  --faint:       #5A6375;
+  --text:        #F5F5F5;
+  --muted:       #A8A8A8;
+  --faint:       #6B6B6B;
 
-  --line:        #1B242F;
-  --line-strong: #2A3543;
+  --line:        #1C1C1C;
+  --line-strong: #2A2A2A;
 
-  --accent:      #22D3EE;
+  --accent:      #FF6F00;
+  --accent-ink:  #080808;
 
-  --font-sans: 'Inter Tight', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Ghost colours for the glitch split. Orange is the accent; a cool
+     blue offsets it the way magenta used to offset the cyan. */
+  --ghost:       #22D3EE;
+  --error:       #F07171;
+  --scrim:       rgb(6 8 10 / 0.82);
+
+  --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  color-scheme: dark;
 
   /* Deliberately generous — whitespace is the main design tool here */
   --gutter: clamp(1.25rem, 5vw, 2.5rem);
@@ -37,6 +52,31 @@
   --section: clamp(5rem, 11vw, 8.5rem);
 
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Light — the inverted dark values, behind data-theme only. The
+   accent stays orange (per the chosen light option); every other
+   token flips so white backgrounds still have real contrast. */
+:root[data-theme='light'] {
+  --bg:          #FAFAFA;
+  --bg-elev:     #FFFFFF;
+  --bg-inset:    #F2F2F2;
+
+  --text:        #111111;
+  --muted:       #5C5C5C;
+  --faint:       #8A8A8A;
+
+  --line:        #E6E6E6;
+  --line-strong: #D0D0D0;
+
+  --accent:      #FF6F00;
+  --accent-ink:  #111111;
+
+  --ghost:       #0B5CC9;
+  --error:       #B3261E;
+  --scrim:       rgb(17 17 17 / 0.5);
+
+  color-scheme: light;
 }
 
 /* ── Reset ───────────────────────────────────────────────────── */
@@ -139,7 +179,7 @@ button {
   cursor: pointer;
 }
 
-::selection { background: var(--accent); color: var(--bg); }
+::selection { background: var(--accent); color: var(--accent-ink); }
 
 :focus-visible {
   outline: 2px solid var(--accent);
@@ -150,6 +190,7 @@ button {
 /* ── Typography ──────────────────────────────────────────────── */
 h1, h2, h3 {
   margin: 0;
+  font-family: var(--font-display);
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.15;
@@ -208,7 +249,7 @@ kbd {
   z-index: 200;
   padding: 0.75rem 1.25rem;
   background: var(--accent);
-  color: var(--bg);
+  color: var(--accent-ink);
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   transform: translateY(-110%);
@@ -418,6 +459,24 @@ kbd {
 .nav__toggle[aria-expanded='true'] .nav__toggle-bars span:first-child { transform: translateY(3px) rotate(45deg); }
 .nav__toggle[aria-expanded='true'] .nav__toggle-bars span:last-child  { transform: translateY(-3px) rotate(-45deg); }
 
+/* Theme toggle — a quiet icon beside the links. Sun means "go dark",
+   moon means "go light"; the inline head script sets the initial
+   data-theme before the first paint so there is no flash. */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-right: -0.25rem;
+  color: var(--muted);
+  transition: color 0.18s var(--ease);
+}
+.theme-toggle .theme-icon { width: 1.1rem; height: 1.1rem; display: block; }
+.theme-toggle .theme-icon--moon { display: none; }
+html[data-theme='light'] .theme-toggle .theme-icon--sun  { display: none; }
+html[data-theme='light'] .theme-toggle .theme-icon--moon { display: block; }
+
 /* Mobile menu */
 .mobile-menu {
   position: fixed;
@@ -432,6 +491,7 @@ kbd {
 }
 .mobile-menu__links { display: grid; gap: 0.25rem; }
 .mobile-menu__links a {
+  font-family: var(--font-display);
   font-size: 1.75rem;
   letter-spacing: -0.02em;
   padding: 0.5rem 0;
@@ -488,6 +548,7 @@ kbd {
    page, and it is what the glitch attaches to. */
 .hero__statement {
   margin: clamp(2.5rem, 6vh, 4rem) 0 0;
+  font-family: var(--font-display);
   font-size: clamp(1.75rem, 6.5vw, 4.25rem);
   font-weight: 500;
   line-height: 1.04;
@@ -524,7 +585,7 @@ kbd {
   will-change: transform, opacity;
 }
 .glitch::before { color: var(--accent); }
-.glitch::after  { color: #ff2e88; }
+.glitch::after  { color: var(--ghost); }
 
 @keyframes glitch-a {
   0%   { opacity: 0.85; transform: translate(0, 0);        clip-path: inset(0 0 0 0); }
@@ -566,7 +627,7 @@ kbd {
   will-change: transform, opacity;
 }
 .is-glitching [data-route-heading]::before { color: var(--accent); }
-.is-glitching [data-route-heading]::after  { color: #ff2e88; }
+.is-glitching [data-route-heading]::after  { color: var(--ghost); }
 
 .is-glitching [data-route-heading]::before { animation: glitch-a 0.4s steps(4, end) 1; }
 .is-glitching [data-route-heading]::after  { animation: glitch-b 0.4s steps(4, end) 1; }
@@ -793,9 +854,9 @@ kbd {
   inset: 0;
   border-radius: 50%;
 }
-.ctrl-close { background: #3D4654; }
-.ctrl-min   { background: #3D4654; }
-.ctrl-max   { background: #3D4654; }
+.ctrl-close { background: var(--line-strong); }
+.ctrl-min   { background: var(--line-strong); }
+.ctrl-max   { background: var(--line-strong); }
 
 .titlebar-title {
   flex: 1;
@@ -908,7 +969,7 @@ kbd {
 .terminal-output .para--muted,
 .terminal-output .welcome-line--muted { color: var(--faint); }
 .terminal-output .success-line { color: var(--text); }
-.terminal-output .error-line { color: #F07171; }
+.terminal-output .error-line { color: var(--error); }
 .terminal-output a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 
 .terminal-output .divider {
@@ -983,7 +1044,7 @@ kbd {
   z-index: 300;
   display: grid;
   place-items: center;
-  background: rgb(6 10 15 / 0.82);
+  background: var(--scrim);
   padding: var(--gutter);
 }
 .modal-box {
@@ -1003,7 +1064,7 @@ kbd {
   font-size: 0.8125rem;
   transition: border-color 0.18s var(--ease), color 0.18s var(--ease);
 }
-.btn-danger  { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.btn-danger  { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
 /* ================================================================
    CONTACT
@@ -1178,6 +1239,7 @@ kbd {
    ================================================================ */
 @media (hover: hover) and (pointer: fine) {
   .nav__links a:hover { color: var(--text); }
+  .theme-toggle:hover { color: var(--accent); }
   .link-arrow:hover { color: var(--accent); border-color: var(--accent); }
   .index__link:hover { padding-left: 0.5rem; }
   .index__link:hover .index__name::after { color: var(--accent); }
