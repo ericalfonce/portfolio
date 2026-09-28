@@ -843,16 +843,38 @@ kbd {
   max-width: 40ch;
 }
 
+/* Logo panel. It now carries a caption, so it is a column: the mark
+   centres in whatever space is left once the caption has taken its
+   share. min-height: 0 on the art box is what lets the mark's
+   max-height: 100% resolve against it inside a flex column. */
 .case__visual {
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
   margin: 3rem 0;
   padding: 2.5rem;
-  aspect-ratio: 4 / 1.6;
+  aspect-ratio: 4 / 1.9;
   border: 1px solid var(--line);
   background: var(--bg-elev);
 }
-.case__mark { max-height: 100%; width: auto; }
+.case__visual-art {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+.case__mark { max-height: 100%; max-width: 100%; width: auto; }
+.case__caption {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
 
 .case__prose { margin-top: 3rem; max-width: 64ch; }
 .case__prose p { color: var(--muted); font-size: 1.0625rem; }

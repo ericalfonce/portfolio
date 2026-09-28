@@ -9,6 +9,18 @@
 import { getProject, getNextProject } from '../data.js';
 import { esc } from '../utils.js';
 
+/* Where a mark came from, as a bare host. Used as the caption under a
+   logo so the panel says what it is instead of being a bare frame
+   around a picture. Falls back to the project name when the project
+   has no public URL. */
+function captionFor(project) {
+  if (project.url) {
+    try { return new URL(project.url).host.replace(/^www\./, ''); }
+    catch { /* not a parseable URL - fall through to the name */ }
+  }
+  return project.name;
+}
+
 function notFound(view) {
   view.innerHTML = `
     <div class="case">
@@ -38,7 +50,14 @@ export function renderProjectRoute(view, slug) {
     : '';
 
   const mark = project.mark
-    ? `<img class="case__mark" src="/img/${esc(project.mark)}" alt="${esc(project.name)}" decoding="async" />`
+    ? `
+      <figure class="case__visual">
+        <div class="case__visual-art">
+          <img class="case__mark" src="/img/${esc(project.mark)}" alt="${esc(project.name)}" decoding="async" />
+        </div>
+        <figcaption class="case__caption">${esc(captionFor(project))}</figcaption>
+      </figure>
+    `
     : '';
 
   const links = [];

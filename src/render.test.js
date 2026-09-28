@@ -131,6 +131,32 @@ describe('case study render', () => {
     }
   });
 
+  it('gives every logo panel a caption, so it is not a bare frame', () => {
+    for (const p of PROJECTS) {
+      if (!p.mark) continue;
+      project.renderProjectRoute(view(), p.slug);
+      const fig = view().querySelector('figure.case__visual');
+      expect(fig, `${p.slug}: mark is not in a figure`).not.toBeNull();
+      const caption = fig.querySelector('figcaption.case__caption');
+      expect(caption, `${p.slug}: logo panel has no caption`).not.toBeNull();
+      expect(caption.textContent.trim(), `${p.slug}: caption is empty`).toMatch(/[a-z]/i);
+    }
+  });
+
+  it('caps a logo panel with where it came from, never a bare image', () => {
+    project.renderProjectRoute(view(), 'mulikascans');
+    expect(view().querySelector('figcaption.case__caption').textContent).toBe('mulikascans.com');
+    project.renderProjectRoute(view(), 'iklwalabs');
+    expect(view().querySelector('figcaption.case__caption').textContent).toBe('iklwalabs.co.tz');
+  });
+
+  it('omits the panel entirely for projects with no mark', () => {
+    for (const p of PROJECTS.filter((x) => !x.mark)) {
+      project.renderProjectRoute(view(), p.slug);
+      expect(view().querySelector('.case__visual'), p.slug).toBeNull();
+    }
+  });
+
   it('handles an unknown slug instead of throwing', () => {
     expect(() => project.renderProjectRoute(view(), 'does-not-exist')).not.toThrow();
     expect(view().textContent).toContain('Not found');
