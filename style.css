@@ -81,6 +81,43 @@ body.menu-open { overflow: hidden; }
 
 img { max-width: 100%; height: auto; display: block; }
 
+/* ══════════════ Atmosphere ══════════════
+   Two purely decorative layers, both behind the content and both
+   non-interactive. They add cyber character without touching layout.
+
+   Fixed + pointer-events: none, so the canvas can never eat a click
+   or a tap. opacity is kept low on purpose - this is texture, not a
+   screensaver. */
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+}
+.atmosphere[data-atmosphere='off'] { display: none; }
+
+.scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.35;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(242, 242, 255, 0.035) 0px,
+    rgba(242, 242, 255, 0.035) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* Content has to sit above both. The shell, views and footer are all
+   in normal flow, so an explicit stacking context per view is enough. */
+.nav, .mobile-menu, #app, .footer { position: relative; z-index: 2; }
+
 a { color: inherit; text-decoration: none; }
 
 button {
@@ -369,6 +406,105 @@ kbd {
   font-size: 0.875rem;
   color: var(--faint);
   animation: hero-in 0.7s var(--ease) 0.16s both;
+}
+
+/* The statement. Big on purpose - it is the loudest thing on the
+   page, and it is what the glitch attaches to. */
+.hero__statement {
+  margin: clamp(2.5rem, 6vh, 4rem) 0 0;
+  font-size: clamp(1.75rem, 6.5vw, 4.25rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+.hero__statement .glitch {
+  display: block;
+  animation: hero-in 0.7s var(--ease) both;
+}
+.hero__statement .glitch:nth-child(1) { animation-delay: 0.24s; }
+.hero__statement .glitch:nth-child(2) { animation-delay: 0.32s; }
+.hero__statement .glitch:nth-child(3) { animation-delay: 0.4s; }
+
+/* ── Glitch ──────────────────────────────────────────────────
+   The real text is always present, fully opaque and selectable. Two
+   ghosts (cyan, magenta) sit behind it and are painted from
+   data-text, so they can never become the only copy on screen.
+
+   This is the piece the old build got wrong: there, a reveal
+   observer toggled opacity on the actual text, so when it failed the
+   headline vanished. Nothing here ever hides the real characters.
+
+   The ghosts need a positioned ancestor, which .glitch provides. */
+.glitch { position: relative; display: inline-block; }
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.glitch::before { color: var(--accent); }
+.glitch::after  { color: #ff2e88; }
+
+@keyframes glitch-a {
+  0%   { opacity: 0.85; transform: translate(0, 0);        clip-path: inset(0 0 0 0); }
+  25%  { opacity: 0.7;  transform: translate(-3px, 1px);   clip-path: inset(12% 0 62% 0); }
+  50%  { opacity: 0.8;  transform: translate(3px, -1px);   clip-path: inset(54% 0 22% 0); }
+  75%  { opacity: 0.65; transform: translate(-2px, 0);     clip-path: inset(32% 0 44% 0); }
+  100% { opacity: 0;    transform: translate(0, 0);        clip-path: inset(0 0 0 0); }
+}
+@keyframes glitch-b {
+  0%   { opacity: 0.85; transform: translate(0, 0);        clip-path: inset(0 0 0 0); }
+  25%  { opacity: 0.7;  transform: translate(3px, -1px);   clip-path: inset(58% 0 18% 0); }
+  50%  { opacity: 0.8;  transform: translate(-3px, 1px);   clip-path: inset(18% 0 56% 0); }
+  75%  { opacity: 0.65; transform: translate(2px, 0);      clip-path: inset(40% 0 36% 0); }
+  100% { opacity: 0;    transform: translate(0, 0);        clip-path: inset(0 0 0 0); }
+}
+
+/* One short burst on hover, only on real pointers. It is not
+   infinite, so it settles instead of nagging. */
+@media (hover: hover) and (pointer: fine) {
+  .glitch:hover::before { animation: glitch-a 0.34s steps(4, end) 1; }
+  .glitch:hover::after  { animation: glitch-b 0.34s steps(4, end) 1; }
+}
+
+/* A single burst when the route changes, flagged on <html> by
+   main.js. Same one-shot, so it cannot loop.
+
+   data-text is filled in by main.js from the element's own
+   textContent, so a ghost can never disagree with the real text or
+   come up empty when someone edits a heading. */
+.is-glitching [data-route-heading],
+.is-glitching .glitch { position: relative; }
+.is-glitching [data-route-heading]::before,
+.is-glitching [data-route-heading]::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform, opacity;
+}
+.is-glitching [data-route-heading]::before { color: var(--accent); }
+.is-glitching [data-route-heading]::after  { color: #ff2e88; }
+
+.is-glitching [data-route-heading]::before { animation: glitch-a 0.4s steps(4, end) 1; }
+.is-glitching [data-route-heading]::after  { animation: glitch-b 0.4s steps(4, end) 1; }
+.is-glitching .glitch::before { animation: glitch-a 0.4s steps(4, end) 1; }
+.is-glitching .glitch::after  { animation: glitch-b 0.4s steps(4, end) 1; }
+
+/* Section headings get the same treatment on hover, plus a cyan
+   caret so the cyber read survives when nothing is moving. */
+.section__title { position: relative; }
+@media (hover: hover) and (pointer: fine) {
+  .section__title:hover::after {
+    content: "_";
+    color: var(--accent);
+  }
 }
 
 @keyframes hero-in {
@@ -1019,5 +1155,15 @@ kbd {
   }
   .hero__name,
   .hero__roles,
-  .hero__location { opacity: 1; transform: none; }
+  .hero__location,
+  .hero__statement .glitch { opacity: 1; transform: none; }
+
+  /* Glitch ghosts must never be able to linger, and the scanlines
+     are a static overlay so they stay, but the matrix rain is dead
+     motion and goes away entirely. */
+  .glitch::before,
+  .glitch::after,
+  [data-route-heading]::before,
+  [data-route-heading]::after { content: none !important; }
+  .atmosphere { display: none; }
 }

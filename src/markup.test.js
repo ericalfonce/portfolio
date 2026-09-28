@@ -155,10 +155,23 @@ describe('restrained structure', () => {
     expect(text).toContain('ERIC ALFONCE');
     expect(text).toContain('Cybersecurity & Software');
     expect(text).toContain('Tanzania');
-    /* No secondary tagline, scroll cue or statement paragraph. */
-    expect(html).not.toContain('hero__statement');
-    expect(html).not.toContain('hero__scroll');
-    expect(html).not.toContain('hero__meta');
+          expect(html).not.toContain('hero__scroll');
+          expect(html).not.toContain('hero__meta');
+
+          /* The big-words statement is back, deliberately. It was
+             reported missing, not surplus - the earlier complaint was
+             that it never appeared, which was the reveal bug. So the
+             restraint rule is now about the name/discipline/location
+             trio staying exactly as specified, and the statement being
+             the one sanctioned addition. */
+          const statement = html.slice(
+            html.indexOf('class="hero__statement"'),
+            html.indexOf('</p>', html.indexOf('class="hero__statement"'))
+          );
+          expect(statement, 'hero is missing the statement').toContain('hero__statement');
+          expect(text).toContain('I build secure digital systems and experiences');
+          /* Still no invented scroll cue or meta row. */
+          expect(html).not.toContain('hero__meta');
   });
 
   it('keeps the footer to the name and the year', () => {
@@ -179,9 +192,18 @@ describe('restrained structure', () => {
   it('uses the sampled brand palette and only one accent hue', () => {
     expect(css).toContain('--bg:          #080E14');
     expect(css).toContain('--accent:      #22D3EE');
-    /* No gradients or glowing text-shadows anywhere. */
-    expect(css).not.toMatch(/linear-gradient/);
-    expect(css).not.toMatch(/radial-gradient/);
+
+    /* The scanline overlay is the one gradient the cyber theme is
+       allowed, and it is asserted by its own test below. Every other
+       gradient is banned, as are glows on text and boxes. */
+    const scanBlock = (() => {
+      const m = css.match(/\.scanlines\s*\{([^}]*)\}/);
+      return m ? m[1] : '';
+    })();
+    const withoutScanlines = css.replace(/\.scanlines\s*\{[^}]*\}/, '');
+    expect(withoutScanlines, 'no gradients outside the scanline overlay')
+      .not.toMatch(/linear-gradient/);
+    expect(withoutScanlines).not.toMatch(/radial-gradient/);
     expect(css).not.toMatch(/text-shadow/);
     expect(css).not.toMatch(/box-shadow/);
   });
@@ -198,6 +220,58 @@ describe('restrained structure', () => {
     const heroMin = Number(h1Size.match(/clamp\(([\d.]+)rem/)?.[1]);
     const sectionMax = Number(sectionSize.match(/,\s*([\d.]+)rem\)/)?.[1]);
     expect(heroMin).toBeGreaterThan(sectionMax);
+  });
+
+  it('never lets a decorative layer intercept input', () => {
+    /* Matrix rain and scanlines sit above the background. If either
+       could take a pointer event, a tap on a work row or a terminal
+       command would silently stop working - the exact class of bug
+       that is invisible in a DOM check. */
+    for (const sel of ['.atmosphere', '.scanlines']) {
+      const m = css.match(new RegExp('\\' + sel + '\\s*\\{([^}]*)\\}'));
+      expect(m, `${sel} has no rule`).not.toBeNull();
+      expect(m[1], `${sel} must not intercept pointer events`)
+        .toMatch(/pointer-events:\s*none/);
+    }
+  });
+
+  it('keeps the glitch from ever hiding the real text', () => {
+    /* This is the regression that motivated the whole approach. The old
+       build toggled opacity on the actual characters via a reveal
+       observer, so when the observer missed, the headline was simply
+       gone. The glitch must only ever paint ghosts from data-text and
+       leave the real characters alone. */
+    expect(css).toMatch(/\.glitch::before,\s*\.glitch::after\s*\{[^}]*content:\s*attr\(data-text\)/s);
+    expect(css).toMatch(/\.glitch::before,\s*\.glitch::after\s*\{[^}]*opacity:\s*0/s);
+
+    /* No rule may set the real glitch text transparent. */
+    for (const m of css.matchAll(/(\.glitch|\[data-route-heading\])\s*\{([^}]*)\}/g)) {
+      expect(m[2], `${m[1]} must not make the real text transparent`)
+        .not.toMatch(/(^|[\s;])(?<!-)\bopacity:\s*0(?![\d.])/);
+    }
+
+    /* And the entry animations must end fully opaque. */
+    expect(css).toMatch(/@keyframes hero-in\s*\{[^}]*\}\s*(?:\n\s*[^{}]*\{)*[^}]*opacity:\s*1/s);
+  });
+
+  it('gives the glitch ghosts no layout or interaction of their own', () => {
+    /* ::before and ::after are styled by one shared rule, so match the
+       pair together rather than each selector in isolation. */
+    const m = css.match(/\.glitch::before,\s*\.glitch::after\s*\{([^}]*)\}/);
+    expect(m, 'no shared ghost rule').not.toBeNull();
+    expect(m[1]).toMatch(/position:\s*absolute/);
+    expect(m[1]).toMatch(/inset:\s*0/);
+    expect(m[1]).toMatch(/pointer-events:\s*none/);
+
+    /* Each ghost is then coloured by its own rule, neither of which
+       may reintroduce interaction. */
+    for (const sel of ['.glitch::before', '.glitch::after']) {
+      const re = new RegExp('(^|[,\\s])' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\{([^}]*)\\}', 'm');
+      const one = css.match(re);
+      expect(one, `${sel} has no colour rule`).not.toBeNull();
+      expect(one[2], `${sel} must not take pointer events`)
+        .not.toMatch(/pointer-events:\s*auto/);
+    }
   });
 
   it('respects prefers-reduced-motion', () => {

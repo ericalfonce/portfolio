@@ -87,6 +87,12 @@
 </head>
 <body>
 
+  <!-- ══════════════ Atmosphere (decorative, behind all content) ══════════════ -->
+  <!-- Painted by src/atmosphere.js. aria-hidden and never interactive.
+       The scanline overlay is a single CSS gradient, not an image. -->
+  <canvas id="atmosphere" class="atmosphere" aria-hidden="true"></canvas>
+  <div class="scanlines" aria-hidden="true"></div>
+
   <!-- ══════════════ Boot Sequence Overlay ══════════════ -->
   <div id="boot-screen" role="status" aria-live="polite">
     <div class="boot-inner">
@@ -146,12 +152,19 @@
     <!-- ──────────── HOME ──────────── -->
     <div class="view view--home" data-view="home">
 
-      <!-- Hero: name, discipline, location. Nothing else. -->
+      <!-- Hero: name, discipline, location, then the statement. -->
       <section class="hero" aria-labelledby="hero-name">
         <div>
           <h1 class="hero__name" id="hero-name" data-route-heading>ERIC ALFONCE</h1>
           <p class="hero__roles">Cybersecurity &amp; Software</p>
           <p class="hero__location">Tanzania</p>
+          <!-- The big words. Each line is its own block so the glitch
+               ghosts in CSS line up with it exactly. -->
+          <p class="hero__statement">
+            <span class="glitch" data-text="I build secure">I build secure</span>
+            <span class="glitch" data-text="digital systems">digital systems</span>
+            <span class="glitch" data-text="and experiences">and experiences</span>
+          </p>
         </div>
       </section>
 
