@@ -9,8 +9,10 @@
 
    · 20s by default, counted from the line dwell times so the
      sequence and its test cannot drift apart.
-   · Shown once per browsing session (sessionStorage), so internal
-     navigation and reloads never replay it.
+   · Plays on every load. There is deliberately no "once per session"
+     flag: it is a 20 second gate, and a gate that quietly stops
+     appearing on the second visit is a bug the visitor reads as a
+     broken page. Skipping it is one click, one key or one tap.
    · Skippable — any click, keypress or tap jumps to SYSTEM READY.
    · honours prefers-reduced-motion by resolving almost immediately
      with a plain cross-fade and no per-line animation.
@@ -19,8 +21,6 @@
    ================================================================ */
 
 import { prefersReducedMotion } from './utils.js';
-
-const SESSION_KEY = 'ea-booted';
 
 /* Target for the full run: 20s of dwell, plus the pre-ready beat and
    the exit fade, lands the visitor on the site at ~21.2s. Exported so
@@ -110,49 +110,12 @@ function dwellTimes() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/* How many times a visitor whose storage throws is still shown the
-   sequence before we stop trying. A blocked sessionStorage also means
-   markBooted() cannot stick, so without a cap a reload would replay
-   the intro forever. Two runs is enough to prove the page is reachable
-   and not enough to become the gate the visitor cannot leave. */
-let blockedStorageRuns = 0;
-const BLOCKED_RUN_LIMIT = 2;
-
-/** Has the full sequence already played in this tab session? */
-export function hasBootedThisSession() {
-  try {
-    return sessionStorage.getItem(SESSION_KEY) === '1';
-  } catch {
-    /* Blocked storage. The flag is unreadable, so it cannot be trusted
-       to mean "already booted" — reporting true here suppressed the
-       sequence entirely for anyone with storage restrictions, which is
-       the opposite of what this fallback was meant to do.
-
-       The reason to be cautious about looping is real, but it is
-       handled by the fact that the sequence is skippable (any key,
-       click or tap) and by the cap above, not by hiding the intro from
-       everyone whose storage throws. */
-    return blockedStorageRuns >= BLOCKED_RUN_LIMIT;
-  }
-}
-
-/** Count a run that happened because storage was blocked, so the cap
-    above eventually stops replaying it. No-op when storage works. */
-function noteBlockedRun() {
-  blockedStorageRuns += 1;
-}
-
-function markBooted() {
-  try {
-    sessionStorage.setItem(SESSION_KEY, '1');
-  } catch { /* non-fatal */ }
-}
-
-function clearSessionFlag() {
-  try {
-    sessionStorage.removeItem(SESSION_KEY);
-  } catch { /* non-fatal */ }
-}
+/* There is no "already booted" flag. An earlier build used
+   sessionStorage for this and it made the intro disappear on the
+   second load onwards, which is exactly when a visitor decides whether
+   the site works. The sequence is a 20 second gate, so the guarantee
+   that matters is that it can always be escaped — any key, click or
+   tap, or the visible skip button — not that it only appears once. */
 
 function buildLine({ label, status, tone }) {
   const row = document.createElement('div');
@@ -207,9 +170,6 @@ export async function runBoot({ onComplete } = {}) {
     ready.className = 'boot-line boot-ready';
     ready.textContent = 'ERIC ALFONCE SYSTEM READY';
     log.appendChild(ready);
-    /* The sequence has been shown, just briefly — still mark the
-       session so a reload goes straight to the site. */
-    markBooted();
     await sleep(420);
     await finish(screen, onComplete);
     return;
@@ -239,10 +199,14 @@ export async function runBoot({ onComplete } = {}) {
 
   let didSkip = false;
   for (let i = 0; i < BOOT_LINES.length; i++) {
-    didSkip = await race(dwell[i]);
-    if (didSkip) break;
+    /* Write the line, THEN wait. Waiting first left the log empty for
+       the whole of the opening dwell — about a second and a half of
+       nothing — which reads as a page that has not started rather than
+       as a system that is checking itself. */
     log.appendChild(buildLine(BOOT_LINES[i]));
     log.scrollTop = log.scrollHeight;
+    didSkip = await race(dwell[i]);
+    if (didSkip) break;
   }
 
   /* Signature final line — always shown, even on skip, so the boot
@@ -258,7 +222,6 @@ export async function runBoot({ onComplete } = {}) {
   window.removeEventListener('keydown', skip);
   skipBtn?.removeEventListener('click', skip);
 
-  markBooted();
   await finish(screen, onComplete);
 }
 
@@ -300,13 +263,6 @@ export async function initBoot({ onComplete } = {}) {
     return;
   }
 
-  if (forced !== true && hasBootedThisSession()) {
-    revealSite(onComplete);
-    return;
-  }
-
-  if (!sessionStorageWorks()) noteBlockedRun();
-
   await runBoot({ onComplete });
 }
 
@@ -316,17 +272,6 @@ function readBootOverride() {
   if (param === '1' || param === 'true') return true;
   if (param === '0' || param === 'false') return false;
   return null;
-}
-
-/** Can the session flag be written at all? Drives the blocked-storage cap. */
-function sessionStorageWorks() {
-  try {
-    sessionStorage.setItem(SESSION_KEY, '1');
-    sessionStorage.removeItem(SESSION_KEY);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 /** Hand control to the page with the overlay already out of the way. */
@@ -340,12 +285,7 @@ function revealSite(onComplete) {
   onComplete?.();
 }
 
-export { clearSessionFlag as resetBootSession, BOOT_LINES };
-
-/** Test hook: clear the blocked-storage run counter. */
-export function _resetBlockedRunsForTests() {
-  blockedStorageRuns = 0;
-}
+export { BOOT_LINES };
 
 /* Exported for tests: the reduced-motion run and the slow-connection
    run are both derived from these, so a test can assert the real

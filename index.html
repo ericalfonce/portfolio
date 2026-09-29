@@ -98,8 +98,29 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Three families only: Space Grotesk for headings, Plus Jakarta
-       Sans for text, JetBrains Mono for the terminal. -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+       Sans for text, JetBrains Mono for the terminal.
+
+       Loaded without blocking the parser. As a plain stylesheet this
+       was render-blocking, and it held up the module script behind it:
+       domContentLoaded sat at ~2.2s, so the boot overlay was on screen
+       but empty for two seconds before the first line appeared, which
+       is indistinguishable from a page that has not started. The
+       overlay uses JetBrains Mono and so does the terminal, so the
+       swap is visible but brief, and the fallback is a generic mono
+       with the same metrics. media="print" + onload is the standard
+       way to get a stylesheet loaded without blocking. -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    media="print"
+    onload="this.media='all'"
+  />
+  <noscript>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+  </noscript>
   <link rel="stylesheet" href="/style.css" />
 
   <!-- Without JS the boot overlay would trap the visitor forever. -->

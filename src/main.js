@@ -140,10 +140,15 @@ initCursor();
    no-op under reduced motion, where encryptText renders the final
    state with no noise at all. */
 function initEncryptedHero() {
+  /* Slow, and strictly one word after another. 110ms per character is
+     roughly double the original component's pace, and 1.2s between
+     words is long enough that the name finishes being legible before
+     the first statement line starts — overlapping them reads as a
+     single jumble rather than as a sequence. */
   return encryptAll('.hero__name, .hero__statement .glitch', {
-    revealDelayMs: 45,
-    flipDelayMs: 45,
-    staggerMs: 180,
+    revealDelayMs: 110,
+    flipDelayMs: 90,
+    staggerMs: 1200,
   });
 }
 

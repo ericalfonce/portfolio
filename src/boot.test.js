@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
-  hasBootedThisSession, runBoot, initBoot, resetBootSession,
-  _resetBlockedRunsForTests, BOOT_LINES, BOOT_TARGET_MS, BOOT_TOTALS,
+  runBoot, initBoot, BOOT_LINES, BOOT_TARGET_MS, BOOT_TOTALS,
 } from './boot.js';
 
 function mountBootDOM({ withSkip = true } = {}) {
@@ -59,66 +58,65 @@ describe('BOOT_LINES', () => {
   });
 });
 
-describe('hasBootedThisSession', () => {
-  beforeEach(() => resetBootSession());
-
-  it('is false on a fresh session', () => {
-    expect(hasBootedThisSession()).toBe(false);
-  });
-
-  it('is true once the flag is set', () => {
-    sessionStorage.setItem('ea-booted', '1');
-    expect(hasBootedThisSession()).toBe(true);
-  });
-
-  it('runs the sequence when storage is blocked, rather than hiding it', () => {
-    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-      throw new Error('SecurityError');
-    });
-    /* An unreadable flag is not evidence the sequence already ran.
-       Reporting true here suppressed the intro for every visitor with
-       storage restrictions, which is the bug this case pins. */
-    expect(hasBootedThisSession()).toBe(false);
-    spy.mockRestore();
-  });
-
-  it('caps replays when storage stays blocked', async () => {
-    _resetBlockedRunsForTests();
-    /* A blocked flag also cannot be written, so without a cap the
-       sequence would replay on every reload. Driven through initBoot
-       because that is what actually increments the counter. */
-    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-      throw new Error('SecurityError');
-    });
-    const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('SecurityError');
-    });
-    setSearch('');
+/* The sequence used to be gated on a sessionStorage flag, which made
+   it disappear on every load after the first. A 20 second gate that
+   quietly stops appearing reads as a broken site, so the gate is gone
+   and these cases pin the behaviour that replaced it. */
+describe('boot always plays', () => {
+  beforeEach(() => {
+    mountBootDOM();
     setReduced(true);
+    setSearch('');
+  });
 
-    for (let i = 0; i < 4; i += 1) {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    setSearch('');
+  });
+
+  it('plays on a second load with the session flag still set', async () => {
+    sessionStorage.setItem('ea-booted', '1');
+    await initBoot();
+    expect(document.getElementById('boot-log').children.length).toBe(BOOT_LINES.length + 1);
+  });
+
+  it('plays on a third load too', async () => {
+    for (let i = 0; i < 3; i += 1) {
       mountBootDOM();
       document.documentElement.className = '';
       await initBoot();
     }
+    expect(document.getElementById('boot-log').children.length).toBe(BOOT_LINES.length + 1);
+  });
 
-    /* The cap was passed, so the overlay is now skipped and the site
-       is handed straight over rather than looping the intro forever. */
-    mountBootDOM();
-    document.documentElement.className = '';
-    await initBoot();
-    expect(document.getElementById('boot-screen').style.display).toBe('none');
+  it('plays when sessionStorage is entirely blocked', async () => {
+    /* A private-mode or restricted-storage visitor is exactly who must
+       not be left staring at a site that will not finish booting. */
+    const get = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('SecurityError');
+    });
+    const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('SecurityError');
+    });
+    await expect(initBoot()).resolves.toBeUndefined();
+    expect(document.getElementById('boot-log').children.length).toBe(BOOT_LINES.length + 1);
+    get.mockRestore();
+    set.mockRestore();
+  });
 
-    spy.mockRestore();
-    write.mockRestore();
-    _resetBlockedRunsForTests();
+  it('writes the first line immediately rather than after the opening dwell', async () => {
+    /* Waiting before writing left the log empty for ~1.4s, which looks
+       like a dead page. Under reduced motion the whole list is written
+       in one pass, so this asserts the first line is present with no
+       timer advance at all. */
+    const done = initBoot();
+    expect(document.getElementById('boot-log').children.length).toBeGreaterThan(0);
+    await done;
   });
 });
 
 describe('initBoot', () => {
   beforeEach(() => {
-    resetBootSession();
-    _resetBlockedRunsForTests();
     mountBootDOM();
     setReduced(true);
     setSearch('');
@@ -139,29 +137,11 @@ describe('initBoot', () => {
     expect(document.documentElement.classList.contains('is-booting')).toBe(false);
   });
 
-  it('marks the session under reduced motion, so a reload goes straight to the site', async () => {
-    await initBoot();
-    expect(hasBootedThisSession()).toBe(true);
-  });
-
   it('writes every boot line plus the final READY marker', async () => {
     await initBoot();
     const log = document.getElementById('boot-log');
     expect(log.querySelectorAll('.boot-line').length).toBe(BOOT_LINES.length + 1);
     expect(log.textContent).toContain('ERIC ALFONCE SYSTEM READY');
-  });
-
-  it('hides the overlay entirely when the session is already booted', async () => {
-    await initBoot();
-    /* A second call stands in for a hard reload in the same session. */
-    document.body.innerHTML = `
-      <div id="boot-screen"><div id="boot-log"></div></div>
-    `;
-    await initBoot();
-
-    const screen = document.getElementById('boot-screen');
-    expect(screen.style.display).toBe('none');
-    expect(document.getElementById('boot-log').children.length).toBe(0);
   });
 
   it('calls onComplete exactly once', async () => {
@@ -179,13 +159,12 @@ describe('initBoot', () => {
   });
 });
 
-/* The override exists so the intro can be replayed on demand instead of
-   only by clearing site data, which is how "is the boot still there?"
-   was previously unanswerable. */
+/* ?boot=0 is the way past a 20 second gate for someone who has already
+   seen it — for a repeat visitor, a link in a message, or a test. It is
+   the only thing the removed session flag used to do, and doing it
+   deliberately beats it happening as a side effect. */
 describe('initBoot ?boot override', () => {
   beforeEach(() => {
-    resetBootSession();
-    _resetBlockedRunsForTests();
     mountBootDOM();
     setReduced(true);
   });
@@ -195,31 +174,7 @@ describe('initBoot ?boot override', () => {
     setSearch('');
   });
 
-  it('replays the sequence on an already-booted session with ?boot=1', async () => {
-    /* First run marks the session, so the log has to be remounted
-       before the forced replay can be told apart from it. */
-    await initBoot();
-    mountBootDOM();
-    await initBoot();
-    expect(document.getElementById('boot-log').children.length).toBe(0);
-
-    setSearch('?boot=1');
-    mountBootDOM();
-    await initBoot();
-    expect(document.getElementById('boot-log').children.length).toBe(BOOT_LINES.length + 1);
-  });
-
-  it('does not record a forced run, so a plain reload goes back to skipping', async () => {
-    setSearch('?boot=1');
-    await initBoot();
-
-    setSearch('');
-    document.body.innerHTML = '<div id="boot-screen"><div id="boot-log"></div></div>';
-    await initBoot();
-    expect(document.getElementById('boot-log').children.length).toBe(0);
-  });
-
-  it('suppresses the intro on a fresh session with ?boot=0', async () => {
+  it('suppresses the intro with ?boot=0', async () => {
     setSearch('?boot=0');
     await initBoot();
 
@@ -228,13 +183,16 @@ describe('initBoot ?boot override', () => {
     expect(document.documentElement.classList.contains('is-booted')).toBe(true);
   });
 
-  it('ignores a value that is not a boolean, and uses the session flag', async () => {
+  it('plays with ?boot=1', async () => {
+    setSearch('?boot=1');
     await initBoot();
+    expect(document.getElementById('boot-log').children.length).toBe(BOOT_LINES.length + 1);
+  });
 
+  it('ignores a value that is not a boolean, and plays normally', async () => {
     setSearch('?boot=maybe');
-    mountBootDOM();
     await initBoot();
-    expect(document.getElementById('boot-log').children.length).toBe(0);
+    expect(document.getElementById('boot-log').children.length).toBe(BOOT_LINES.length + 1);
   });
 });
 
@@ -247,7 +205,6 @@ describe('runBoot', () => {
        earlier initBoot test leaves is-booted set. Clear it so the
        mid-sequence assertions below test this run and not a leftover. */
     document.documentElement.className = '';
-    resetBootSession();
     mountBootDOM();
     setReduced(false);
     setConnection({ effectiveType: '4g', rtt: 50, saveData: false });
@@ -308,11 +265,6 @@ describe('runBoot', () => {
        settled promise and the counts would not balance. */
     expect(add.mock.calls.filter(([t]) => t === 'click').length).toBe(0);
     expect(remove.mock.calls.filter(([t]) => t === 'click').length).toBe(0);
-  });
-
-  it('marks the session on the normal (non-reduced) path too', async () => {
-    await playToEnd();
-    expect(hasBootedThisSession()).toBe(true);
   });
 
   it('is escapable through the visible skip button', async () => {

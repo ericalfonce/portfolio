@@ -112,8 +112,14 @@ describe('markup contract', () => {
 
   it('escapes the noscript boot trap — no-JS visitors can read the page', () => {
     expect(html).toContain('<noscript>');
-    const noscript = html.slice(html.indexOf('<noscript>'), html.indexOf('</noscript>'));
-    expect(noscript).toMatch(/#boot-screen\s*\{\s*display:\s*none\s*!important/);
+    /* The font stylesheet also has a noscript fallback, so the trap
+       escape is asserted against whichever block carries it rather
+       than by slicing up to the first closing tag. */
+    const blocks = [...html.matchAll(/<noscript>([\s\S]*?)<\/noscript>/g)].map((m) => m[1]);
+    expect(blocks.length).toBeGreaterThan(0);
+    expect(
+      blocks.some((b) => /#boot-screen\s*\{\s*display:\s*none\s*!important/.test(b)),
+    ).toBe(true);
   });
 
   it('hides the page until boot hands over, then shows it', () => {
