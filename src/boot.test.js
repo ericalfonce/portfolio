@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { hasBootedThisSession, runBoot, initBoot, resetBootSession, BOOT_LINES, BOOT_TARGET_MS, BOOT_TOTALS } from './boot.js';
+import {
+  hasBootedThisSession, runBoot, initBoot, resetBootSession,
+  _resetBlockedRunsForTests, BOOT_LINES, BOOT_TARGET_MS, BOOT_TOTALS,
+} from './boot.js';
 
 function mountBootDOM({ withSkip = true } = {}) {
   document.body.innerHTML = `
@@ -18,6 +21,12 @@ function setConnection(conn) {
 
 const setReduced = (matches) =>
   vi.stubGlobal('matchMedia', () => ({ matches, addEventListener() {}, removeEventListener() {} }));
+
+/* Point the suite at a given ?boot= value. initBoot reads the query
+   string, so every case that cares about the override has to set it. */
+function setSearch(search) {
+  window.history.replaceState({}, '', `/${search}`);
+}
 
 describe('BOOT_LINES', () => {
   it('runs for the full 20 seconds', () => {
@@ -62,23 +71,63 @@ describe('hasBootedThisSession', () => {
     expect(hasBootedThisSession()).toBe(true);
   });
 
-  it('treats blocked storage as already booted so the visitor is never trapped', () => {
+  it('runs the sequence when storage is blocked, rather than hiding it', () => {
     const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('SecurityError');
     });
-    expect(hasBootedThisSession()).toBe(true);
+    /* An unreadable flag is not evidence the sequence already ran.
+       Reporting true here suppressed the intro for every visitor with
+       storage restrictions, which is the bug this case pins. */
+    expect(hasBootedThisSession()).toBe(false);
     spy.mockRestore();
+  });
+
+  it('caps replays when storage stays blocked', async () => {
+    _resetBlockedRunsForTests();
+    /* A blocked flag also cannot be written, so without a cap the
+       sequence would replay on every reload. Driven through initBoot
+       because that is what actually increments the counter. */
+    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('SecurityError');
+    });
+    const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('SecurityError');
+    });
+    setSearch('');
+    setReduced(true);
+
+    for (let i = 0; i < 4; i += 1) {
+      mountBootDOM();
+      document.documentElement.className = '';
+      await initBoot();
+    }
+
+    /* The cap was passed, so the overlay is now skipped and the site
+       is handed straight over rather than looping the intro forever. */
+    mountBootDOM();
+    document.documentElement.className = '';
+    await initBoot();
+    expect(document.getElementById('boot-screen').style.display).toBe('none');
+
+    spy.mockRestore();
+    write.mockRestore();
+    _resetBlockedRunsForTests();
   });
 });
 
 describe('initBoot', () => {
   beforeEach(() => {
     resetBootSession();
+    _resetBlockedRunsForTests();
     mountBootDOM();
     setReduced(true);
+    setSearch('');
   });
 
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    setSearch('');
+  });
 
   it('runs the full sequence on a fresh session and reveals the page', async () => {
     await initBoot();
@@ -127,6 +176,65 @@ describe('initBoot', () => {
     await expect(initBoot({ onComplete })).resolves.toBeUndefined();
     expect(onComplete).toHaveBeenCalledTimes(1);
     expect(document.documentElement.classList.contains('is-booted')).toBe(true);
+  });
+});
+
+/* The override exists so the intro can be replayed on demand instead of
+   only by clearing site data, which is how "is the boot still there?"
+   was previously unanswerable. */
+describe('initBoot ?boot override', () => {
+  beforeEach(() => {
+    resetBootSession();
+    _resetBlockedRunsForTests();
+    mountBootDOM();
+    setReduced(true);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    setSearch('');
+  });
+
+  it('replays the sequence on an already-booted session with ?boot=1', async () => {
+    /* First run marks the session, so the log has to be remounted
+       before the forced replay can be told apart from it. */
+    await initBoot();
+    mountBootDOM();
+    await initBoot();
+    expect(document.getElementById('boot-log').children.length).toBe(0);
+
+    setSearch('?boot=1');
+    mountBootDOM();
+    await initBoot();
+    expect(document.getElementById('boot-log').children.length).toBe(BOOT_LINES.length + 1);
+  });
+
+  it('does not record a forced run, so a plain reload goes back to skipping', async () => {
+    setSearch('?boot=1');
+    await initBoot();
+
+    setSearch('');
+    document.body.innerHTML = '<div id="boot-screen"><div id="boot-log"></div></div>';
+    await initBoot();
+    expect(document.getElementById('boot-log').children.length).toBe(0);
+  });
+
+  it('suppresses the intro on a fresh session with ?boot=0', async () => {
+    setSearch('?boot=0');
+    await initBoot();
+
+    expect(document.getElementById('boot-log').children.length).toBe(0);
+    expect(document.getElementById('boot-screen').style.display).toBe('none');
+    expect(document.documentElement.classList.contains('is-booted')).toBe(true);
+  });
+
+  it('ignores a value that is not a boolean, and uses the session flag', async () => {
+    await initBoot();
+
+    setSearch('?boot=maybe');
+    mountBootDOM();
+    await initBoot();
+    expect(document.getElementById('boot-log').children.length).toBe(0);
   });
 });
 

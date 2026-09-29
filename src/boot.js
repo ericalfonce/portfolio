@@ -110,15 +110,36 @@ function dwellTimes() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* How many times a visitor whose storage throws is still shown the
+   sequence before we stop trying. A blocked sessionStorage also means
+   markBooted() cannot stick, so without a cap a reload would replay
+   the intro forever. Two runs is enough to prove the page is reachable
+   and not enough to become the gate the visitor cannot leave. */
+let blockedStorageRuns = 0;
+const BLOCKED_RUN_LIMIT = 2;
+
 /** Has the full sequence already played in this tab session? */
 export function hasBootedThisSession() {
   try {
     return sessionStorage.getItem(SESSION_KEY) === '1';
   } catch {
-    /* Private mode / blocked storage — treat as "already booted" so
-       we never trap the visitor in a loop they cannot escape. */
-    return true;
+    /* Blocked storage. The flag is unreadable, so it cannot be trusted
+       to mean "already booted" — reporting true here suppressed the
+       sequence entirely for anyone with storage restrictions, which is
+       the opposite of what this fallback was meant to do.
+
+       The reason to be cautious about looping is real, but it is
+       handled by the fact that the sequence is skippable (any key,
+       click or tap) and by the cap above, not by hiding the intro from
+       everyone whose storage throws. */
+    return blockedStorageRuns >= BLOCKED_RUN_LIMIT;
   }
+}
+
+/** Count a run that happened because storage was blocked, so the cap
+    above eventually stops replaying it. No-op when storage works. */
+function noteBlockedRun() {
+  blockedStorageRuns += 1;
 }
 
 function markBooted() {
@@ -265,23 +286,66 @@ async function finish(screen, onComplete) {
 /**
  * Entry point. Full sequence once per session, otherwise skip
  * straight to the site.
+ *
+ * `?boot=1` forces the sequence and `?boot=0` suppresses it, so the
+ * intro can be replayed or debugged without clearing site data. The
+ * forced run is deliberately not recorded in the session, so a reload
+ * without the parameter returns to normal once-per-session behaviour.
  */
 export async function initBoot({ onComplete } = {}) {
-  if (hasBootedThisSession()) {
-    const screen = document.getElementById('boot-screen');
-    if (screen) {
-      screen.setAttribute('aria-hidden', 'true');
-      screen.style.display = 'none';
-    }
-    document.documentElement.classList.add('is-booted');
-    onComplete?.();
+  const forced = readBootOverride();
+
+  if (forced === false) {
+    revealSite(onComplete);
     return;
   }
+
+  if (forced !== true && hasBootedThisSession()) {
+    revealSite(onComplete);
+    return;
+  }
+
+  if (!sessionStorageWorks()) noteBlockedRun();
 
   await runBoot({ onComplete });
 }
 
+/** '1' forces the intro, '0' suppresses it, anything else is no opinion. */
+function readBootOverride() {
+  const param = new URLSearchParams(window.location.search).get('boot');
+  if (param === '1' || param === 'true') return true;
+  if (param === '0' || param === 'false') return false;
+  return null;
+}
+
+/** Can the session flag be written at all? Drives the blocked-storage cap. */
+function sessionStorageWorks() {
+  try {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    sessionStorage.removeItem(SESSION_KEY);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Hand control to the page with the overlay already out of the way. */
+function revealSite(onComplete) {
+  const screen = document.getElementById('boot-screen');
+  if (screen) {
+    screen.setAttribute('aria-hidden', 'true');
+    screen.style.display = 'none';
+  }
+  document.documentElement.classList.add('is-booted');
+  onComplete?.();
+}
+
 export { clearSessionFlag as resetBootSession, BOOT_LINES };
+
+/** Test hook: clear the blocked-storage run counter. */
+export function _resetBlockedRunsForTests() {
+  blockedStorageRuns = 0;
+}
 
 /* Exported for tests: the reduced-motion run and the slow-connection
    run are both derived from these, so a test can assert the real

@@ -604,6 +604,52 @@ html[data-theme='light'] .theme-toggle .theme-icon--moon { display: block; }
 
 /* One short burst on hover, only on real pointers. It is not
    infinite, so it settles instead of nagging. */
+/* ── Encrypted text ─────────────────────────────────────────
+   The hero's own text, assembled out of noise on load.
+
+   The real characters stay in the DOM and stay selectable; the noise is
+   an absolutely positioned layer of spans sitting exactly on top of
+   them. So the effect is purely additive: if the animation never runs,
+   is cancelled, or is skipped under prefers-reduced-motion, the heading
+   is simply already readable.
+
+   Each noise character carries the measured left/top/width/height of
+   the real character it covers, set from src/encrypted-text.js. Laying
+   the layer out with grid and a 1ch column does not work on this hero:
+   the name is set in a large proportional display face, so an advance
+   width is not a character width, and the noise ran wider than the text
+   and wrapped mid-reveal. */
+.hero__name.is-encrypted,
+.hero__statement .glitch.is-encrypted {
+  position: relative;
+}
+
+.enc-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.enc-char {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  text-align: center;
+  color: var(--faint);
+  transition: opacity 0.12s linear;
+}
+.enc-char.is-revealed {
+  opacity: 0;
+}
+
+/* Reduced motion: no noise is ever built, and this keeps the styles
+   from applying to anything that slips through. */
+@media (prefers-reduced-motion: reduce) {
+  .enc-layer { display: none; }
+  .enc-char { transition: none; }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .glitch:hover::before { animation: glitch-a 0.34s steps(4, end) 1; }
   .glitch:hover::after  { animation: glitch-b 0.34s steps(4, end) 1; }

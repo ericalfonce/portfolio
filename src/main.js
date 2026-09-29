@@ -21,6 +21,7 @@ import { renderProjectRoute } from './site/project.js';
 import { getProject } from './data.js';
 import { initCursor } from './cursor.js';
 import { initTheme } from './theme.js';
+import { encryptAll } from './encrypted-text.js';
 import { prefersReducedMotion } from './utils.js';
 
 /* ── Content ── */
@@ -36,7 +37,13 @@ renderHome();
 function primeGlitchTargets() {
   for (const el of document.querySelectorAll('[data-route-heading]')) {
     if (!el.getAttribute('data-text')) {
-      el.setAttribute('data-text', (el.textContent || '').trim());
+      /* A route change can land while the hero is still decrypting, and
+         the noise layer is part of textContent. Taking the copy from
+         the layer would bake scrambled characters into the ghost, so
+         the layer is excluded and the real text is what gets stored. */
+      const clone = el.cloneNode(true);
+      clone.querySelectorAll('.enc-layer').forEach((n) => n.remove());
+      el.setAttribute('data-text', (clone.textContent || '').trim());
     }
   }
 }
@@ -126,8 +133,28 @@ initMobileMenu();
    the boot sequence for the first paint. */
 initCursor();
 
+/* ── Encrypted hero ───────────────────────────────────────
+   The name and the statement assemble out of noise once the boot
+   overlay has handed over, so the two never compete for the first
+   paint. Staggered by index so the page reads top to bottom, and a
+   no-op under reduced motion, where encryptText renders the final
+   state with no noise at all. */
+function initEncryptedHero() {
+  return encryptAll('.hero__name, .hero__statement .glitch', {
+    revealDelayMs: 45,
+    flipDelayMs: 45,
+    staggerMs: 180,
+  });
+}
+
 /* ── Boot ──
    The terminal is wired synchronously above, so it is already
    listening while the overlay plays. terminalReady() only prints the
-   greeting once the visitor can actually see it. */
-initBoot({ onComplete: terminalReady });
+   greeting once the visitor can actually see it, and the hero only
+   starts decrypting at that same moment. */
+initBoot({
+  onComplete: () => {
+    terminalReady();
+    initEncryptedHero();
+  },
+});
