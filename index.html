@@ -84,16 +84,31 @@
   </script>
 
   <!-- Favicons
-       The pixelated glitch marks restored from the V1 build, which is
-       what the tab icon should be. sizes are declared per size so a
-       browser picks the one it needs instead of downscaling blindly;
-       the ICO-style 32 is the fallback for anything that ignores
-       sizes entirely. -->
-  <link rel="icon" type="image/png" sizes="32x32"   href="/img/favicon-32.png" />
-  <link rel="icon" type="image/png" sizes="96x96"   href="/img/favicon-96.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/img/mulikascans-favicon-192.png" />
-  <link rel="apple-touch-icon" type="image/png" href="/img/mulikascans-favicon-192.png" />
-  <link rel="mask-icon" href="/img/favicon-32.png" color="#FF6F00" />
+       The pixelated glitch mark, and only that mark. A 192px MulikaScans
+       logo was also declared here as rel="icon", and because browsers
+       prefer the largest matching size, that smooth rounded-square
+       logo won and the pixel art never showed. The product logo still
+       appears inside the page, where it belongs; the tab icon is the
+       personal mark.
+
+       favicon-32 is 8x8 art at 4x and favicon-96 is 12x12 at 8x, so
+       both are true pixel art rather than pixel art that has been
+       resampled smooth. Sizes are declared per file so a browser
+       picks the one it needs instead of downscaling the 96 itself.
+
+       The ?v=2 on each href is deliberate. Browsers cache favicons
+       far more aggressively than other assets and will happily show
+       the old icon for a long time after a change; without it, a
+       corrected favicon looks like it did not take. Bump the version
+       whenever these files change.
+
+       The mask-icon that used to be here pointed at a PNG, which is
+       not a valid mask source, and the mark is fully opaque with no
+       transparent background, so a mask would only ever render as a
+       solid square. It is gone rather than faked. -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png?v=2" />
+  <link rel="icon" type="image/png" sizes="96x96" href="/img/favicon-96.png?v=2" />
+  <link rel="apple-touch-icon" type="image/png" href="/img/apple-touch-icon.png?v=2" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

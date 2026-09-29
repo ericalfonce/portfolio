@@ -3,6 +3,19 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/* Width and height from a PNG's IHDR chunk. The 8-byte signature, then
+   a 4-byte length and the 4-byte "IHDR" type, puts the dimensions at
+   bytes 16..23. Done by hand so asserting an icon's size does not drag
+   an image decoding library into the suite. */
+function pngSize(file) {
+  const buf = readFileSync(file);
+  const isPng =
+    buf.length > 24 &&
+    buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+  if (!isPng) throw new Error(`${file} is not a PNG`);
+  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+}
+
 /* ================================================================
    Markup contract.
 
@@ -439,10 +452,52 @@ describe('seo shell', () => {
     for (const file of ['favicon-32.png', 'favicon-96.png']) {
       expect(existsSync(join(root, 'public', 'img', file)), `${file} is missing`).toBe(true);
     }
+  });
 
-    /* apple-touch-icon stays on the 192 so iOS home screens do not get
-       a 32px icon blown up. */
-    expect(html).toMatch(/rel="apple-touch-icon"[^>]*mulikascans-favicon-192\.png/);
+  it('keeps the smooth product logo out of the tab icon', () => {
+    /* Declaring the 192px MulikaScans logo as rel="icon" made browsers
+       prefer it, because the largest matching size wins — which is how
+       the smooth rounded-square logo ended up in the tab and the pixel
+       art never appeared at all. The logo still belongs on the page,
+       just not on the tab. */
+    const iconHrefs = [...html.matchAll(/<link rel="(icon|apple-touch-icon)"[^>]*>/g)].map((m) => m[0]);
+    expect(iconHrefs.length).toBeGreaterThan(0);
+    for (const tag of iconHrefs) {
+      expect(tag, 'tab icons must be the pixelated mark').not.toMatch(/mulikascans-favicon-192/);
+    }
+
+    /* A mask needs an SVG source and a transparent background to be
+       worth anything. This mark is fully opaque, so a mask could only
+       ever render as a solid square. */
+    expect(html).not.toMatch(/rel="mask-icon"/);
+  });
+
+  it('ships a real-size pixelated apple-touch icon', () => {
+    /* iOS home screens want 180px. Reusing the 192px product logo gave
+       iOS the smooth mark while every other platform showed pixel
+       art, and scaling a 32px file up to 180 would be mush. */
+    const tag = html.match(/<link rel="apple-touch-icon"[^>]*>/)?.[0];
+    expect(tag).toBeTruthy();
+    expect(tag).toMatch(/href="\/img\/apple-touch-icon\.png/);
+
+    const file = join(root, 'public', 'img', 'apple-touch-icon.png');
+    expect(existsSync(file), 'apple-touch-icon.png is missing').toBe(true);
+
+    /* 180x180. Read straight out of the PNG IHDR chunk rather than
+       pulling in an image library for two integers. */
+    const { width, height } = pngSize(file);
+    expect(width).toBe(180);
+    expect(height).toBe(180);
+  });
+
+  it('versions the favicon hrefs so a change is not masked by cache', () => {
+    /* Browsers cache favicons far harder than other assets and will
+       show the previous icon long after it changed. Without a version
+       on the href, a corrected favicon looks like it did not take. */
+    const tags = [...html.matchAll(/<link rel="(?:icon|apple-touch-icon)"[^>]*>/g)].map((m) => m[0]);
+    for (const tag of tags) {
+      expect(tag, `${tag} has no cache-busting version`).toMatch(/href="[^"]*\?v=\d+"/);
+    }
   });
 
   it('points the social image at a local asset', () => {
