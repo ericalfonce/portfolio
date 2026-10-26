@@ -31,9 +31,9 @@ describe('BOOT_LINES', () => {
   it('stays visible for several seconds', () => {
     const dwell = BOOT_LINES.reduce((sum, l) => sum + l.ms, 0);
     const total = dwell + BOOT_TOTALS.preReady + BOOT_TOTALS.exit;
-    expect(BOOT_TARGET_MS).toBe(5_000);
+    expect(BOOT_TARGET_MS).toBe(10_000);
     expect(dwell).toBe(BOOT_TARGET_MS);
-    expect(total).toBe(5_400);
+    expect(total).toBe(10_400);
   });
 
   it('lands on a signature line before the exit fade', () => {
@@ -51,7 +51,7 @@ describe('BOOT_LINES', () => {
 
   it('keeps the transcript compact', () => {
     expect(BOOT_LINES.length).toBeGreaterThanOrEqual(5);
-    expect(BOOT_LINES.length).toBeLessThanOrEqual(12);
+    expect(BOOT_LINES.length).toBeLessThanOrEqual(18);
   });
 });
 
@@ -276,7 +276,7 @@ describe('runBoot', () => {
     const done = runBoot();
 
     /* Part way through, nothing has handed over yet. */
-    await vi.advanceTimersByTimeAsync(2_500);
+    await vi.advanceTimersByTimeAsync(5_000);
     expect(screen.classList.contains('boot-hidden')).toBe(false);
     expect(document.documentElement.classList.contains('is-booted')).toBe(false);
     const midway = document.getElementById('boot-log').querySelectorAll('.boot-line').length;
@@ -284,7 +284,7 @@ describe('runBoot', () => {
     expect(midway).toBeLessThan(BOOT_LINES.length);
 
     /* At the end everything is written and the page is handed over. */
-    await vi.advanceTimersByTimeAsync(3_500);
+    await vi.advanceTimersByTimeAsync(6_000);
     await done;
     expect(document.getElementById('boot-log').querySelectorAll('.boot-line').length)
       .toBe(BOOT_LINES.length + 1);

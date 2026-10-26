@@ -4,7 +4,7 @@
    A short terminal-style introduction that preserves the site's
    identity without making the page feel stuck.
 
-   · 5s on every full page start.
+   · 10s on every full page start.
    · The complete site is revealed only after the boot handoff.
    · Skippable only through the visible Skip button or Escape key.
    · honours prefers-reduced-motion by showing a static completed log
@@ -14,10 +14,10 @@
 
 import { prefersReducedMotion } from './utils.js';
 
-/* Target for the full run: 5s of dwell, plus the pre-ready beat and
-   the exit fade, lands the visitor on the site at ~5.4s. Exported so
+/* Target for the full run: 10s of dwell, plus the pre-ready beat and
+   the exit fade, lands the visitor on the site at ~10.4s. Exported so
    the tests assert the real number rather than a duplicated constant. */
-export const BOOT_TARGET_MS = 5_000;
+export const BOOT_TARGET_MS = 10_000;
 
 /**
  * Boot lines. `ms` is the dwell time AFTER the line is written, so
@@ -33,9 +33,13 @@ const WEIGHTED_LINES = [
   { time: '0.021337', label: 'Command line: quiet portfolio.mode=secure', tone: 'muted', weight: 0.75 },
   { time: '0.083114', label: 'x86/cpu: architecture initialized', status: 'OK', tone: 'ok', weight: 0.8 },
   { time: '0.164802', label: 'Memory: creative workspace available', status: 'OK', tone: 'ok', weight: 0.8 },
+  { time: '0.238941', label: 'smp: bringing secondary processors online', status: 'OK', tone: 'ok', weight: 0.75 },
   { time: '0.311450', label: 'security: loading application safeguards', status: 'OK', tone: 'ok', weight: 0.9 },
+  { time: '0.398226', label: 'filesystem: mounted portfolio assets read-only', status: 'OK', tone: 'ok', weight: 0.85 },
   { time: '0.487219', label: 'net: bringing interface portfolio0 up', status: 'OK', tone: 'ok', weight: 0.9 },
+  { time: '0.611843', label: 'dns: resolver configuration accepted', status: 'OK', tone: 'ok', weight: 0.75 },
   { time: '0.724006', label: 'crypto: verified project metadata', status: 'OK', tone: 'ok', weight: 0.8 },
+  { time: '0.884175', label: 'audit: project integrity checks passed', status: 'OK', tone: 'ok', weight: 0.85 },
   { time: '1.036481', label: 'systemd[1]: Mounted /work and /about', status: 'OK', tone: 'ok', weight: 0.9 },
   { time: '1.402735', label: 'renderer: activating visual interface', status: 'OK', tone: 'ok', weight: 1.0 },
   { time: '1.863290', label: 'portfolio0: link becomes ready', status: 'UP', tone: 'ok', weight: 1.0 },
@@ -65,11 +69,11 @@ const BOOT_LINES = distribute(BOOT_TARGET_MS, WEIGHTED_LINES);
    budget, so the real total is target + these two. */
 const PRE_READY_MS = 80;
 const EXIT_MS = 320;
-const REDUCED_HOLD_MS = 4_000;
+const REDUCED_HOLD_MS = 8_000;
 
 /** Keep the flourish especially brief when data-saving is enabled or
     the connection is poor. */
-const SLOW_FACTOR = 0.8;
+const SLOW_FACTOR = 0.85;
 
 /** True when the connection looks slow enough to warrant a shorter run. */
 function onSlowConnection() {
