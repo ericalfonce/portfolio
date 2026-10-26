@@ -87,7 +87,7 @@ export function renderProjectRoute(view, slug) {
 
       <p class="case__summary">${esc(project.summary)}</p>
 
-      ${mark ? `<div class="case__visual">${mark}</div>` : ''}
+      ${mark}
 
       <div class="case__prose">
         ${project.body.map((para) => `<p>${esc(para)}</p>`).join('')}

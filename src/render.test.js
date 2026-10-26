@@ -170,6 +170,16 @@ describe('case study render', () => {
       if (!p.url) expect(hrefs.some((h) => h === p.url)).toBe(false);
     }
   });
+
+  it('links ScholarReport to its live site', () => {
+    project.renderProjectRoute(view(), 'scholarreport');
+    expect(view().querySelector('a[href="https://scholarreports.iklwalabs.co.tz"]')).not.toBeNull();
+  });
+
+  it('does not wrap project figures in a duplicate visual container', () => {
+    project.renderProjectRoute(view(), 'mulikascans');
+    expect(view().querySelector('.case__visual .case__visual')).toBeNull();
+  });
 });
 
 /* ================================================================

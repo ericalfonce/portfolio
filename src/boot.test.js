@@ -28,12 +28,12 @@ function setSearch(search) {
 }
 
 describe('BOOT_LINES', () => {
-  it('runs for the full 20 seconds', () => {
+  it('finishes in a little over two seconds', () => {
     const dwell = BOOT_LINES.reduce((sum, l) => sum + l.ms, 0);
     const total = dwell + BOOT_TOTALS.preReady + BOOT_TOTALS.exit;
-    expect(BOOT_TARGET_MS).toBe(20_000);
+    expect(BOOT_TARGET_MS).toBe(1_800);
     expect(dwell).toBe(BOOT_TARGET_MS);
-    expect(total).toBe(20_680);
+    expect(total).toBe(2_200);
   });
 
   it('lands on a signature line before the exit fade', () => {
@@ -49,21 +49,15 @@ describe('BOOT_LINES', () => {
     }
   });
 
-  it('is long enough to fill the log without scrolling on a desktop', () => {
-    /* The log reserves 25rem, and 21 lines at line-height 1.9 on
-       0.8125rem is about 25.9rem, so this is deliberately at the
-       edge rather than far under. Asserted so a future line removal
-       cannot quietly leave the box half empty. */
-    expect(BOOT_LINES.length).toBeGreaterThanOrEqual(20);
+  it('keeps the transcript compact', () => {
+    expect(BOOT_LINES.length).toBeGreaterThanOrEqual(5);
+    expect(BOOT_LINES.length).toBeLessThanOrEqual(8);
   });
 });
 
-/* The sequence used to be gated on a sessionStorage flag, which made
-   it disappear on every load after the first. A 20 second gate that
-   quietly stops appearing reads as a broken site, so the gate is gone
-   and these cases pin the behaviour that replaced it. */
-describe('boot always plays', () => {
+describe('boot session behaviour', () => {
   beforeEach(() => {
+    sessionStorage.clear();
     mountBootDOM();
     setReduced(true);
     setSearch('');
@@ -74,19 +68,16 @@ describe('boot always plays', () => {
     setSearch('');
   });
 
-  it('plays on a second load with the session flag still set', async () => {
+  it('reveals immediately after the intro has played in this session', async () => {
     sessionStorage.setItem('ea-booted', '1');
     await initBoot();
-    expect(document.getElementById('boot-log').children.length).toBe(BOOT_LINES.length + 1);
+    expect(document.getElementById('boot-log').children.length).toBe(0);
+    expect(document.getElementById('boot-screen').style.display).toBe('none');
   });
 
-  it('plays on a third load too', async () => {
-    for (let i = 0; i < 3; i += 1) {
-      mountBootDOM();
-      document.documentElement.className = '';
-      await initBoot();
-    }
-    expect(document.getElementById('boot-log').children.length).toBe(BOOT_LINES.length + 1);
+  it('records a completed intro for the next load', async () => {
+    await initBoot();
+    expect(sessionStorage.getItem('ea-booted')).toBe('1');
   });
 
   it('plays when sessionStorage is entirely blocked', async () => {
@@ -117,6 +108,7 @@ describe('boot always plays', () => {
 
 describe('initBoot', () => {
   beforeEach(() => {
+    sessionStorage.clear();
     mountBootDOM();
     setReduced(true);
     setSearch('');
@@ -159,12 +151,11 @@ describe('initBoot', () => {
   });
 });
 
-/* ?boot=0 is the way past a 20 second gate for someone who has already
-   seen it — for a repeat visitor, a link in a message, or a test. It is
-   the only thing the removed session flag used to do, and doing it
-   deliberately beats it happening as a side effect. */
+/* Query overrides keep the intro easy to replay or suppress while
+   debugging without changing normal once-per-session behaviour. */
 describe('initBoot ?boot override', () => {
   beforeEach(() => {
+    sessionStorage.clear();
     mountBootDOM();
     setReduced(true);
   });
@@ -196,9 +187,9 @@ describe('initBoot ?boot override', () => {
   });
 });
 
-/* The full run is 20s of real time. Every test that lets it play out
+/* Every test that lets the full intro play out
    to the end drives fake timers, so the suite stays fast and the
-   20 second contract is still asserted for real. */
+   drives fake timers so the suite stays fast. */
 describe('runBoot', () => {
   beforeEach(() => {
     /* documentElement classes persist across tests in a file, and an
@@ -268,8 +259,7 @@ describe('runBoot', () => {
   });
 
   it('is escapable through the visible skip button', async () => {
-    /* A 20 second gate is only acceptable if the way out is visible,
-       not merely undocumented. */
+    /* The way out is visible, not merely undocumented. */
     const screen = document.getElementById('boot-screen');
     const done = skipNow();
     await vi.advanceTimersByTimeAsync(2_000);
@@ -277,12 +267,12 @@ describe('runBoot', () => {
     expect(screen.classList.contains('boot-hidden')).toBe(true);
   });
 
-  it('plays the full 20s and every line when left alone', async () => {
+  it('plays every line when left alone', async () => {
     const screen = document.getElementById('boot-screen');
     const done = runBoot();
 
     /* Part way through, nothing has handed over yet. */
-    await vi.advanceTimersByTimeAsync(10_000);
+    await vi.advanceTimersByTimeAsync(900);
     expect(screen.classList.contains('boot-hidden')).toBe(false);
     expect(document.documentElement.classList.contains('is-booted')).toBe(false);
     const midway = document.getElementById('boot-log').querySelectorAll('.boot-line').length;
@@ -290,7 +280,7 @@ describe('runBoot', () => {
     expect(midway).toBeLessThan(BOOT_LINES.length);
 
     /* At the end everything is written and the page is handed over. */
-    await vi.advanceTimersByTimeAsync(15_000);
+    await vi.advanceTimersByTimeAsync(2_000);
     await done;
     expect(document.getElementById('boot-log').querySelectorAll('.boot-line').length)
       .toBe(BOOT_LINES.length + 1);
@@ -318,7 +308,7 @@ describe('runBoot', () => {
     expect(screen.classList.contains('boot-hidden')).toBe(true);
   });
 
-  it('completes the shortened run well before 20s', async () => {
+  it('completes the shortened run before the normal intro', async () => {
     setConnection({ effectiveType: '2g', rtt: 20 });
     const screen = document.getElementById('boot-screen');
     const done = runBoot();

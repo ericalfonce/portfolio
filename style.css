@@ -296,12 +296,11 @@ kbd {
   overflow: hidden;
 }
 
-/* The run is 20s and writes 21 lines, so the log has to hold the full
-   transcript. min-height reserves that height up front so the layout
-   does not reflow line by line while it fills, and max-height keeps a
+/* The short run writes six lines. min-height reserves that height so
+   the layout does not reflow line by line while it fills, and max-height keeps a
    short viewport from overflowing the screen. */
 #boot-log {
-  min-height: 25rem;
+  min-height: 10rem;
   max-height: 52vh;
   overflow: hidden auto;
   scrollbar-width: thin;
@@ -334,11 +333,8 @@ kbd {
   }
 
   /* ── Phone ──
-     21 lines of transcript plus the logo cannot fit a short screen, so
-     the logo shrinks and the log scrolls. The skip row is pinned to the
-     bottom of the viewport rather than sitting under the transcript,
-     because on a 20 second run the way out has to be reachable with a
-     thumb without scrolling past everything. */
+     Keep the compact transcript and skip action comfortable on short
+     screens. */
   @media (max-width: 640px) {
     #boot-screen {
       align-content: center;
@@ -373,8 +369,8 @@ kbd {
   }
 .boot-hint { color: var(--faint); }
 
-/* A 20 second gate needs a way out that a visitor can see. Styled as
-   a quiet text button so it does not compete with the transcript, but
+/* The intro has a visible way out. Styled as a quiet text button so it
+   does not compete with the transcript, but
    it is a real button: focusable, keyboard-activatable, and it
    advertises itself with an underline. */
 .boot-skip {

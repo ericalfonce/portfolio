@@ -125,6 +125,10 @@ describe('projects', () => {
     expect(FEATURED_PROJECTS[0].url).toBe('https://mulikascans.com');
   });
 
+  it('uses the live ScholarReport destination', () => {
+    expect(getProject('scholarreport')?.url).toBe('https://scholarreports.iklwalabs.co.tz');
+  });
+
   it('drops the invented repositories from the previous data set', () => {
     /* These were listed before but are not in the public account. */
     const gone = ['imei-guard', 'webscanner', 'Bluetooth-jammer-esp32', 'diagrams', 'Web-Dev-For-Beginners'];

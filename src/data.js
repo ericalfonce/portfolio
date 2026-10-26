@@ -12,7 +12,7 @@
      README on disk. Do not add projects that cannot be verified.
 
    · `url` is the real public destination. It is `null` for private or
-     unreleased work (Network Billing System, TunuPay, ScholarReport)
+     unreleased work (Network Billing System, TunuPay)
      — those render as plain text rows with no link, which is honest.
      Do not invent a repo URL to fill the gap.
 
@@ -297,17 +297,17 @@ export const PROJECTS = [
     slug: 'scholarreport',
     name: 'ScholarReport',
     category: 'EdTech',
-    year: null,
+    year: 2026,
     featured: false,
     mark: null,
-    url: null,
+    url: 'https://scholarreports.iklwalabs.co.tz',
     repo: null,
-    summary: 'School results and reporting system — still in development.',
+    summary: 'School results and reporting platform for creating, managing and sharing academic reports.',
     body: [
-      'A results and reporting system for schools, listed on my public profile as ' +
-      'work in progress. It is not released publicly yet.',
+      'ScholarReport is a web-based results and reporting system for schools. It gives ' +
+      'staff one place to manage student performance and produce academic reports.',
     ],
-    stack: [],
+    stack: ['Python', 'Django', 'PostgreSQL', 'Nginx'],
   },
 ];
 

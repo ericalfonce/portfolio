@@ -1,18 +1,11 @@
 /* ================================================================
    Boot sequence — the portfolio's opening identity.
 
-   A 20 second run. That is a long time on a web page, and it is a
-   deliberate trade: this is the first thing anyone sees, and the
-   terminal POST has to last long enough to read as a system coming
-   up rather than a spinner. It stays skippable, prominently, because
-   a 20 second gate that cannot be escaped is a bug, not an identity.
+   A short terminal-style introduction that preserves the site's
+   identity without making the page feel stuck.
 
-   · 20s by default, counted from the line dwell times so the
-     sequence and its test cannot drift apart.
-   · Plays on every load. There is deliberately no "once per session"
-     flag: it is a 20 second gate, and a gate that quietly stops
-     appearing on the second visit is a bug the visitor reads as a
-     broken page. Skipping it is one click, one key or one tap.
+   · 1.8s on the first visit in a tab.
+   · Repeat loads in the same session reveal the site immediately.
    · Skippable — any click, keypress or tap jumps to SYSTEM READY.
    · honours prefers-reduced-motion by resolving almost immediately
      with a plain cross-fade and no per-line animation.
@@ -22,42 +15,27 @@
 
 import { prefersReducedMotion } from './utils.js';
 
-/* Target for the full run: 20s of dwell, plus the pre-ready beat and
-   the exit fade, lands the visitor on the site at ~21.2s. Exported so
+/* Target for the full run: 1.8s of dwell, plus the pre-ready beat and
+   the exit fade, lands the visitor on the site at ~2.2s. Exported so
    the tests assert the real number rather than a duplicated constant. */
-export const BOOT_TARGET_MS = 20_000;
+export const BOOT_TARGET_MS = 1_800;
 
 /**
  * Boot lines. `ms` is the dwell time AFTER the line is written, so
  * the total runtime is the sum of these.
  *
- * The dwell values are spread across the 20s target below rather than
- * typed in as absolutes, which is what keeps the run at 20s when a
+ * The dwell values are spread across the target below rather than
+ * typed in as absolutes, which keeps the run on target when a
  * line is added or removed. Weights are relative: the long pauses sit
  * on the lines that carry the idea.
  */
 const WEIGHTED_LINES = [
-  { label: 'INITIALIZING SYSTEM',          status: '...',   tone: 'info', weight: 2.0 },
-  { label: 'CPU ARCHITECTURE',            status: 'x64',   tone: 'ok',   weight: 1.0 },
-  { label: 'MEMORY',                      status: 'OK',    tone: 'ok',   weight: 1.0 },
-  { label: 'KERNEL',                      status: 'OK',    tone: 'ok',   weight: 1.0 },
-  { label: 'SECURITY SERVICES',           status: 'OK',    tone: 'ok',   weight: 1.6 },
-  { label: 'FIREWALL RULESET',            status: 'OK',    tone: 'ok',   weight: 1.2 },
-  { label: 'THREAT MODEL',                status: 'LOADED',tone: 'ok',   weight: 1.6 },
-  { label: 'PAYMENT GATEWAY',             status: 'OK',    tone: 'ok',   weight: 1.2 },
-  { label: 'NETWORK INTERFACE',           status: 'OK',    tone: 'ok',   weight: 1.0 },
-  { label: 'DNS RESOLVER',                status: 'OK',    tone: 'ok',   weight: 1.0 },
-  { label: 'TLS HANDSHAKE',               status: 'ESTABLISHED', tone: 'ok', weight: 1.4 },
-  { label: 'SCANNING ENGINES',            status: 'OK',    tone: 'ok',   weight: 1.2 },
-  { label: 'VULNERABILITY DATABASE',      status: 'SYNCED',tone: 'ok',   weight: 1.4 },
-  { label: 'FORENSICS TOOLKIT',           status: 'OK',    tone: 'ok',   weight: 1.2 },
-  { label: 'LINUX TOOLCHAIN',             status: 'OK',    tone: 'ok',   weight: 1.0 },
-  { label: 'TERMINAL',                    status: 'READY', tone: 'ok',   weight: 1.8 },
-  { label: 'LOADING PORTFOLIO MODULES',   status: '...',   tone: 'info', weight: 2.0 },
-  { label: 'RENDERER',                    status: 'OK',    tone: 'ok',   weight: 1.2 },
-  { label: 'GLITCH ENGINE',               status: 'OK',    tone: 'ok',   weight: 1.0 },
-  { label: 'TYPE SYSTEM',                 status: 'OK',    tone: 'ok',   weight: 1.0 },
-  { label: 'CONTENT VERIFIED',            status: 'READY', tone: 'ok',   weight: 2.0 },
+  { label: 'INITIALIZING SYSTEM',        status: '...',   tone: 'info', weight: 1.4 },
+  { label: 'SECURITY SERVICES',          status: 'OK',    tone: 'ok',   weight: 1.0 },
+  { label: 'NETWORK INTERFACE',          status: 'OK',    tone: 'ok',   weight: 1.0 },
+  { label: 'LOADING PORTFOLIO MODULES', status: '...',   tone: 'info', weight: 1.4 },
+  { label: 'RENDERER',                   status: 'OK',    tone: 'ok',   weight: 1.0 },
+  { label: 'CONTENT VERIFIED',           status: 'READY', tone: 'ok',   weight: 1.2 },
 ];
 
 /** Distribute BOOT_TARGET_MS across the weighted lines, rounding to
@@ -81,13 +59,12 @@ const BOOT_LINES = distribute(BOOT_TARGET_MS, WEIGHTED_LINES);
 
 /* The pre-ready beat and the exit fade are outside the distributed
    budget, so the real total is target + these two. */
-const PRE_READY_MS = 160;
-const EXIT_MS = 520;
+const PRE_READY_MS = 80;
+const EXIT_MS = 320;
 
-/** A slow connection is exactly where a 20s gate loses people. Cut it
-    to a quarter, which still reads as a system check. */
-const SLOW_MS = 5_000;
-const SLOW_FACTOR = 0.25;
+/** Keep the flourish especially brief when data-saving is enabled or
+    the connection is poor. */
+const SLOW_FACTOR = 0.4;
 
 /** True when the connection looks slow enough to warrant a shorter run. */
 function onSlowConnection() {
@@ -110,12 +87,17 @@ function dwellTimes() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/* There is no "already booted" flag. An earlier build used
-   sessionStorage for this and it made the intro disappear on the
-   second load onwards, which is exactly when a visitor decides whether
-   the site works. The sequence is a 20 second gate, so the guarantee
-   that matters is that it can always be escaped — any key, click or
-   tap, or the visible skip button — not that it only appears once. */
+const SESSION_KEY = 'ea-booted';
+
+function hasBootedThisSession() {
+  try { return sessionStorage.getItem(SESSION_KEY) === '1'; }
+  catch { return false; }
+}
+
+function rememberBoot() {
+  try { sessionStorage.setItem(SESSION_KEY, '1'); }
+  catch { /* Restricted storage should never prevent the page loading. */ }
+}
 
 function buildLine({ label, status, tone }) {
   const row = document.createElement('div');
@@ -170,7 +152,7 @@ export async function runBoot({ onComplete } = {}) {
     ready.className = 'boot-line boot-ready';
     ready.textContent = 'ERIC ALFONCE SYSTEM READY';
     log.appendChild(ready);
-    await sleep(420);
+    await sleep(120);
     await finish(screen, onComplete);
     return;
   }
@@ -258,12 +240,13 @@ async function finish(screen, onComplete) {
 export async function initBoot({ onComplete } = {}) {
   const forced = readBootOverride();
 
-  if (forced === false) {
+  if (forced === false || (forced !== true && hasBootedThisSession())) {
     revealSite(onComplete);
     return;
   }
 
   await runBoot({ onComplete });
+  if (forced !== true) rememberBoot();
 }
 
 /** '1' forces the intro, '0' suppresses it, anything else is no opinion. */
