@@ -18,6 +18,10 @@
         catch (e) { t = 'dark'; }
       }
       document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.classList.add('boot-enabled');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute(
+        'content', t === 'light' ? '#F3F1EA' : '#050806'
+      );
     })();
   </script>
 

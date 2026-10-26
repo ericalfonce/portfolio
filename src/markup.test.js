@@ -136,8 +136,9 @@ describe('markup contract', () => {
   });
 
   it('hides the page until boot hands over, then shows it', () => {
-    expect(css).toMatch(/html\s*\{[^}]*opacity:\s*0/);
-    expect(css).toMatch(/html\.is-booted\s*\{[^}]*opacity:\s*1/);
+    expect(html).toContain("classList.add('boot-enabled')");
+    expect(css).toMatch(/html\.boot-enabled:not\(\.is-booted\) body > :not\(#boot-screen\)/);
+    expect(css).not.toMatch(/html\s*\{[^}]*opacity:\s*0/);
   });
 });
 
