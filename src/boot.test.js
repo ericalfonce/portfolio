@@ -28,12 +28,12 @@ function setSearch(search) {
 }
 
 describe('BOOT_LINES', () => {
-  it('finishes in about three seconds', () => {
+  it('stays visible for several seconds', () => {
     const dwell = BOOT_LINES.reduce((sum, l) => sum + l.ms, 0);
     const total = dwell + BOOT_TOTALS.preReady + BOOT_TOTALS.exit;
-    expect(BOOT_TARGET_MS).toBe(2_600);
+    expect(BOOT_TARGET_MS).toBe(5_000);
     expect(dwell).toBe(BOOT_TARGET_MS);
-    expect(total).toBe(3_000);
+    expect(total).toBe(5_400);
   });
 
   it('lands on a signature line before the exit fade', () => {
@@ -222,10 +222,15 @@ describe('runBoot', () => {
     return done;
   }
 
-  it('is skippable — a click jumps straight to the finished state', async () => {
+  it('does not disappear from an accidental background click', async () => {
     const screen = document.getElementById('boot-screen');
     const done = runBoot();
     screen.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    expect(screen.classList.contains('boot-hidden')).toBe(false);
+
+    screen.querySelector('[data-boot-skip]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await vi.advanceTimersByTimeAsync(2_000);
     await done;
 
@@ -238,9 +243,9 @@ describe('runBoot', () => {
     );
   });
 
-  it('is skippable with the keyboard', async () => {
+  it('is skippable with the Escape key', async () => {
     const done = runBoot();
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await vi.advanceTimersByTimeAsync(2_000);
     await done;
     expect(document.getElementById('boot-screen').classList.contains('boot-hidden')).toBe(true);
@@ -271,7 +276,7 @@ describe('runBoot', () => {
     const done = runBoot();
 
     /* Part way through, nothing has handed over yet. */
-    await vi.advanceTimersByTimeAsync(1_300);
+    await vi.advanceTimersByTimeAsync(2_500);
     expect(screen.classList.contains('boot-hidden')).toBe(false);
     expect(document.documentElement.classList.contains('is-booted')).toBe(false);
     const midway = document.getElementById('boot-log').querySelectorAll('.boot-line').length;
@@ -279,7 +284,7 @@ describe('runBoot', () => {
     expect(midway).toBeLessThan(BOOT_LINES.length);
 
     /* At the end everything is written and the page is handed over. */
-    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(3_500);
     await done;
     expect(document.getElementById('boot-log').querySelectorAll('.boot-line').length)
       .toBe(BOOT_LINES.length + 1);

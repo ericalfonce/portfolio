@@ -4,21 +4,20 @@
    A short terminal-style introduction that preserves the site's
    identity without making the page feel stuck.
 
-   · 2.6s on every full page start.
+   · 5s on every full page start.
    · The complete site is revealed only after the boot handoff.
-   · Skippable — any click, keypress or tap jumps to SYSTEM READY.
-   · honours prefers-reduced-motion by resolving almost immediately
-     with a plain cross-fade and no per-line animation.
-   · Scales down on a slow connection, where a long wait on a thin
-     pipe is the case most likely to lose a visitor.
+   · Skippable only through the visible Skip button or Escape key.
+   · honours prefers-reduced-motion by showing a static completed log
+     for several seconds instead of animating each line.
+   · Remains visible for several seconds even on slow connections.
    ================================================================ */
 
 import { prefersReducedMotion } from './utils.js';
 
-/* Target for the full run: 2.6s of dwell, plus the pre-ready beat and
-   the exit fade, lands the visitor on the site at ~3s. Exported so
+/* Target for the full run: 5s of dwell, plus the pre-ready beat and
+   the exit fade, lands the visitor on the site at ~5.4s. Exported so
    the tests assert the real number rather than a duplicated constant. */
-export const BOOT_TARGET_MS = 2_600;
+export const BOOT_TARGET_MS = 5_000;
 
 /**
  * Boot lines. `ms` is the dwell time AFTER the line is written, so
@@ -66,10 +65,11 @@ const BOOT_LINES = distribute(BOOT_TARGET_MS, WEIGHTED_LINES);
    budget, so the real total is target + these two. */
 const PRE_READY_MS = 80;
 const EXIT_MS = 320;
+const REDUCED_HOLD_MS = 4_000;
 
 /** Keep the flourish especially brief when data-saving is enabled or
     the connection is poor. */
-const SLOW_FACTOR = 0.4;
+const SLOW_FACTOR = 0.8;
 
 /** True when the connection looks slow enough to warrant a shorter run. */
 function onSlowConnection() {
@@ -145,7 +145,7 @@ export async function runBoot({ onComplete } = {}) {
     ready.className = 'boot-line boot-ready';
     ready.innerHTML = '<span>Welcome to EricOS.</span><span class="boot-cursor" aria-hidden="true"></span>';
     log.appendChild(ready);
-    await sleep(120);
+    await sleep(REDUCED_HOLD_MS);
     await finish(screen, onComplete);
     return;
   }
@@ -154,10 +154,11 @@ export async function runBoot({ onComplete } = {}) {
   /* Resolves with true, so it is distinguishable from sleep()'s undefined. */
   const skipped = new Promise((r) => { resolveSkip = r; });
   const skip = () => resolveSkip(true);
+  const skipOnEscape = (event) => {
+    if (event.key === 'Escape') skip();
+  };
 
-  screen.addEventListener('click', skip);
-  window.addEventListener('keydown', skip);
-  window.addEventListener('pointerdown', skip);
+  window.addEventListener('keydown', skipOnEscape);
 
   /* The visible skip button resolves the same promise. Wired here
      rather than in markup onclick so the listener is removed with the
@@ -192,9 +193,7 @@ export async function runBoot({ onComplete } = {}) {
   ready.innerHTML = '<span>Welcome to EricOS.</span><span class="boot-cursor" aria-hidden="true"></span>';
   log.appendChild(ready);
 
-  screen.removeEventListener('click', skip);
-  screen.removeEventListener('pointerdown', skip);
-  window.removeEventListener('keydown', skip);
+  window.removeEventListener('keydown', skipOnEscape);
   skipBtn?.removeEventListener('click', skip);
 
   await finish(screen, onComplete);
@@ -267,4 +266,5 @@ export const BOOT_TOTALS = {
   preReady: PRE_READY_MS,
   exit: EXIT_MS,
   slowTarget: Math.round(BOOT_TARGET_MS * SLOW_FACTOR),
+  reducedHold: REDUCED_HOLD_MS,
 };
