@@ -284,6 +284,7 @@ describe('restrained structure', () => {
     const links = footer.match(/<a\b/g) || [];
     expect(links, 'footer should have no links').toHaveLength(0);
     expect(footer).toContain('data-year');
+    expect(footer).toContain('data-eat-time');
     expect(footer).toContain('footer__name');
   });
 

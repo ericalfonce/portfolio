@@ -23,9 +23,11 @@ import { initCursor } from './cursor.js';
 import { initTheme } from './theme.js';
 import { encryptAll } from './encrypted-text.js';
 import { prefersReducedMotion } from './utils.js';
+import { initEastAfricaClock } from './east-africa-time.js';
 
 /* ── Content ── */
 renderHome();
+initEastAfricaClock();
 
 /* ── Glitch ────────────────────────────────────────────────
    The ghosts are painted from data-text. It is filled in from the

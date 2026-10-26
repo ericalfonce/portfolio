@@ -1300,6 +1300,14 @@ html[data-theme='light'] .theme-toggle .theme-icon--moon { display: block; }
 }
 .footer p { margin: 0; }
 .footer__name { color: var(--muted); }
+.footer__clock { display: flex; align-items: baseline; gap: 0.65rem; }
+.footer__clock span { color: var(--faint); }
+.footer__clock time { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px) {
+  .footer { align-items: flex-start; flex-wrap: wrap; }
+  .footer__clock { order: 3; width: 100%; justify-content: space-between; }
+}
 
 /* ================================================================
    POINTER INPUT
