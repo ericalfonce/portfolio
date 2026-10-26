@@ -28,17 +28,17 @@ function setSearch(search) {
 }
 
 describe('BOOT_LINES', () => {
-  it('finishes in a little over two seconds', () => {
+  it('finishes in about three seconds', () => {
     const dwell = BOOT_LINES.reduce((sum, l) => sum + l.ms, 0);
     const total = dwell + BOOT_TOTALS.preReady + BOOT_TOTALS.exit;
-    expect(BOOT_TARGET_MS).toBe(1_800);
+    expect(BOOT_TARGET_MS).toBe(2_600);
     expect(dwell).toBe(BOOT_TARGET_MS);
-    expect(total).toBe(2_200);
+    expect(total).toBe(3_000);
   });
 
   it('lands on a signature line before the exit fade', () => {
     const last = BOOT_LINES[BOOT_LINES.length - 1];
-    expect(last.label).toBe('CONTENT VERIFIED');
+    expect(last.label).toBe('systemd[1]: Reached target Portfolio');
     expect(last.status).toBe('READY');
   });
 
@@ -51,11 +51,11 @@ describe('BOOT_LINES', () => {
 
   it('keeps the transcript compact', () => {
     expect(BOOT_LINES.length).toBeGreaterThanOrEqual(5);
-    expect(BOOT_LINES.length).toBeLessThanOrEqual(8);
+    expect(BOOT_LINES.length).toBeLessThanOrEqual(12);
   });
 });
 
-describe('boot session behaviour', () => {
+describe('boot startup behaviour', () => {
   beforeEach(() => {
     sessionStorage.clear();
     mountBootDOM();
@@ -68,16 +68,15 @@ describe('boot session behaviour', () => {
     setSearch('');
   });
 
-  it('reveals immediately after the intro has played in this session', async () => {
+  it('plays again on a new full page load', async () => {
     sessionStorage.setItem('ea-booted', '1');
     await initBoot();
-    expect(document.getElementById('boot-log').children.length).toBe(0);
-    expect(document.getElementById('boot-screen').style.display).toBe('none');
+    expect(document.getElementById('boot-log').children.length).toBe(BOOT_LINES.length + 1);
   });
 
-  it('records a completed intro for the next load', async () => {
+  it('does not use storage to decide whether the site boots', async () => {
     await initBoot();
-    expect(sessionStorage.getItem('ea-booted')).toBe('1');
+    expect(sessionStorage.getItem('ea-booted')).toBeNull();
   });
 
   it('plays when sessionStorage is entirely blocked', async () => {
@@ -119,7 +118,7 @@ describe('initBoot', () => {
     setSearch('');
   });
 
-  it('runs the full sequence on a fresh session and reveals the page', async () => {
+  it('runs the full sequence on page start and reveals the site', async () => {
     await initBoot();
 
     const screen = document.getElementById('boot-screen');
@@ -133,7 +132,7 @@ describe('initBoot', () => {
     await initBoot();
     const log = document.getElementById('boot-log');
     expect(log.querySelectorAll('.boot-line').length).toBe(BOOT_LINES.length + 1);
-    expect(log.textContent).toContain('ERIC ALFONCE SYSTEM READY');
+    expect(log.textContent).toContain('Welcome to EricOS.');
   });
 
   it('calls onComplete exactly once', async () => {
@@ -152,7 +151,7 @@ describe('initBoot', () => {
 });
 
 /* Query overrides keep the intro easy to replay or suppress while
-   debugging without changing normal once-per-session behaviour. */
+   debugging without changing normal startup behaviour. */
 describe('initBoot ?boot override', () => {
   beforeEach(() => {
     sessionStorage.clear();
@@ -232,7 +231,7 @@ describe('runBoot', () => {
 
     expect(screen.classList.contains('boot-hidden')).toBe(true);
     /* The signature line is written even on skip. */
-    expect(document.getElementById('boot-log').textContent).toContain('ERIC ALFONCE SYSTEM READY');
+    expect(document.getElementById('boot-log').textContent).toContain('Welcome to EricOS.');
     /* The full line list was not. */
     expect(document.getElementById('boot-log').querySelectorAll('.boot-line').length).toBeLessThan(
       BOOT_LINES.length + 1
@@ -272,7 +271,7 @@ describe('runBoot', () => {
     const done = runBoot();
 
     /* Part way through, nothing has handed over yet. */
-    await vi.advanceTimersByTimeAsync(900);
+    await vi.advanceTimersByTimeAsync(1_300);
     expect(screen.classList.contains('boot-hidden')).toBe(false);
     expect(document.documentElement.classList.contains('is-booted')).toBe(false);
     const midway = document.getElementById('boot-log').querySelectorAll('.boot-line').length;

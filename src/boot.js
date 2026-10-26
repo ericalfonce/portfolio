@@ -4,8 +4,8 @@
    A short terminal-style introduction that preserves the site's
    identity without making the page feel stuck.
 
-   · 1.8s on the first visit in a tab.
-   · Repeat loads in the same session reveal the site immediately.
+   · 2.6s on every full page start.
+   · The complete site is revealed only after the boot handoff.
    · Skippable — any click, keypress or tap jumps to SYSTEM READY.
    · honours prefers-reduced-motion by resolving almost immediately
      with a plain cross-fade and no per-line animation.
@@ -15,10 +15,10 @@
 
 import { prefersReducedMotion } from './utils.js';
 
-/* Target for the full run: 1.8s of dwell, plus the pre-ready beat and
-   the exit fade, lands the visitor on the site at ~2.2s. Exported so
+/* Target for the full run: 2.6s of dwell, plus the pre-ready beat and
+   the exit fade, lands the visitor on the site at ~3s. Exported so
    the tests assert the real number rather than a duplicated constant. */
-export const BOOT_TARGET_MS = 1_800;
+export const BOOT_TARGET_MS = 2_600;
 
 /**
  * Boot lines. `ms` is the dwell time AFTER the line is written, so
@@ -30,12 +30,17 @@ export const BOOT_TARGET_MS = 1_800;
  * on the lines that carry the idea.
  */
 const WEIGHTED_LINES = [
-  { label: 'INITIALIZING SYSTEM',        status: '...',   tone: 'info', weight: 1.4 },
-  { label: 'SECURITY SERVICES',          status: 'OK',    tone: 'ok',   weight: 1.0 },
-  { label: 'NETWORK INTERFACE',          status: 'OK',    tone: 'ok',   weight: 1.0 },
-  { label: 'LOADING PORTFOLIO MODULES', status: '...',   tone: 'info', weight: 1.4 },
-  { label: 'RENDERER',                   status: 'OK',    tone: 'ok',   weight: 1.0 },
-  { label: 'CONTENT VERIFIED',           status: 'READY', tone: 'ok',   weight: 1.2 },
+  { time: '0.000000', label: 'Linux version 6.8.0-eric (portfolio@tanzania)', tone: 'info', weight: 1.25 },
+  { time: '0.021337', label: 'Command line: quiet portfolio.mode=secure', tone: 'muted', weight: 0.75 },
+  { time: '0.083114', label: 'x86/cpu: architecture initialized', status: 'OK', tone: 'ok', weight: 0.8 },
+  { time: '0.164802', label: 'Memory: creative workspace available', status: 'OK', tone: 'ok', weight: 0.8 },
+  { time: '0.311450', label: 'security: loading application safeguards', status: 'OK', tone: 'ok', weight: 0.9 },
+  { time: '0.487219', label: 'net: bringing interface portfolio0 up', status: 'OK', tone: 'ok', weight: 0.9 },
+  { time: '0.724006', label: 'crypto: verified project metadata', status: 'OK', tone: 'ok', weight: 0.8 },
+  { time: '1.036481', label: 'systemd[1]: Mounted /work and /about', status: 'OK', tone: 'ok', weight: 0.9 },
+  { time: '1.402735', label: 'renderer: activating visual interface', status: 'OK', tone: 'ok', weight: 1.0 },
+  { time: '1.863290', label: 'portfolio0: link becomes ready', status: 'UP', tone: 'ok', weight: 1.0 },
+  { time: '2.218406', label: 'systemd[1]: Reached target Portfolio', status: 'READY', tone: 'ready', weight: 1.1 },
 ];
 
 /** Distribute BOOT_TARGET_MS across the weighted lines, rounding to
@@ -87,37 +92,25 @@ function dwellTimes() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const SESSION_KEY = 'ea-booted';
-
-function hasBootedThisSession() {
-  try { return sessionStorage.getItem(SESSION_KEY) === '1'; }
-  catch { return false; }
-}
-
-function rememberBoot() {
-  try { sessionStorage.setItem(SESSION_KEY, '1'); }
-  catch { /* Restricted storage should never prevent the page loading. */ }
-}
-
-function buildLine({ label, status, tone }) {
+function buildLine({ time, label, status, tone }) {
   const row = document.createElement('div');
   row.className = `boot-line boot-${tone}`;
+
+  const stamp = document.createElement('span');
+  stamp.className = 'boot-time';
+  stamp.textContent = `[ ${time.padStart(10, ' ')} ]`;
 
   const name = document.createElement('span');
   name.className = 'boot-label';
   name.textContent = label;
 
-  const dots = document.createElement('span');
-  dots.className = 'boot-dots';
-  /* Dots are decorative padding that aligns every status column. */
-  const labelWidth = Math.max(0, 24 - label.length);
-  dots.textContent = ' '.repeat(labelWidth) + ' ';
-
-  const state = document.createElement('span');
-  state.className = 'boot-status';
-  state.textContent = status;
-
-  row.append(name, dots, state);
+  row.append(stamp, name);
+  if (status) {
+    const state = document.createElement('span');
+    state.className = 'boot-status';
+    state.textContent = `[ ${status} ]`;
+    row.appendChild(state);
+  }
   return row;
 }
 
@@ -150,7 +143,7 @@ export async function runBoot({ onComplete } = {}) {
     BOOT_LINES.forEach((line) => log.appendChild(buildLine(line)));
     const ready = document.createElement('div');
     ready.className = 'boot-line boot-ready';
-    ready.textContent = 'ERIC ALFONCE SYSTEM READY';
+    ready.innerHTML = '<span>Welcome to EricOS.</span><span class="boot-cursor" aria-hidden="true"></span>';
     log.appendChild(ready);
     await sleep(120);
     await finish(screen, onComplete);
@@ -196,7 +189,7 @@ export async function runBoot({ onComplete } = {}) {
   await race(PRE_READY_MS);
   const ready = document.createElement('div');
   ready.className = 'boot-line boot-ready';
-  ready.textContent = 'ERIC ALFONCE SYSTEM READY';
+  ready.innerHTML = '<span>Welcome to EricOS.</span><span class="boot-cursor" aria-hidden="true"></span>';
   log.appendChild(ready);
 
   screen.removeEventListener('click', skip);
@@ -229,24 +222,21 @@ async function finish(screen, onComplete) {
 }
 
 /**
- * Entry point. Full sequence once per session, otherwise skip
- * straight to the site.
+ * Entry point. Run the full sequence on every document load, then
+ * reveal the complete site.
  *
  * `?boot=1` forces the sequence and `?boot=0` suppresses it, so the
- * intro can be replayed or debugged without clearing site data. The
- * forced run is deliberately not recorded in the session, so a reload
- * without the parameter returns to normal once-per-session behaviour.
+ * intro can be replayed or suppressed explicitly during debugging.
  */
 export async function initBoot({ onComplete } = {}) {
   const forced = readBootOverride();
 
-  if (forced === false || (forced !== true && hasBootedThisSession())) {
+  if (forced === false) {
     revealSite(onComplete);
     return;
   }
 
   await runBoot({ onComplete });
-  if (forced !== true) rememberBoot();
 }
 
 /** '1' forces the intro, '0' suppresses it, anything else is no opinion. */
